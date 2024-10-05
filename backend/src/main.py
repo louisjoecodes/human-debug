@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import uvicorn
 from typing import Dict, List, Any
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
@@ -262,3 +262,68 @@ def start():
 
 if __name__ == "__main__":
     start()
+
+# Add this new model for variants
+class Variant(BaseModel):
+    chromosome: str = Field(..., description="Chromosome where the variant is located")
+    position: int = Field(..., description="Position of the variant on the chromosome")
+    reference: str = Field(..., description="Reference allele")
+    alternate: str = Field(..., description="Alternate allele")
+    gene: str = Field(..., description="Gene affected by the variant")
+    consequence: str = Field(..., description="Predicted consequence of the variant")
+    significance: str = Field(..., description="Clinical significance of the variant")
+
+@app.get("/variants")
+async def get_variants() -> List[Variant]:
+    """
+    Return a list of mocked variants identified from genomic analysis.
+    This endpoint is for frontend development purposes.
+    """
+    mock_variants = [
+        Variant(
+            chromosome="1",
+            position=69897,
+            reference="A",
+            alternate="G",
+            gene="OR4F5",
+            consequence="missense_variant",
+            significance="Uncertain significance"
+        ),
+        Variant(
+            chromosome="7",
+            position=117199644,
+            reference="ATCT",
+            alternate="A",
+            gene="CFTR",
+            consequence="frameshift_variant",
+            significance="Pathogenic"
+        ),
+        Variant(
+            chromosome="17",
+            position=41197708,
+            reference="G",
+            alternate="A",
+            gene="BRCA1",
+            consequence="stop_gained",
+            significance="Likely pathogenic"
+        ),
+        Variant(
+            chromosome="X",
+            position=31496081,
+            reference="C",
+            alternate="T",
+            gene="DMD",
+            consequence="splice_donor_variant",
+            significance="Pathogenic"
+        ),
+        Variant(
+            chromosome="4",
+            position=1807894,
+            reference="G",
+            alternate="A",
+            gene="FGFR3",
+            consequence="missense_variant",
+            significance="Benign"
+        )
+    ]
+    return mock_variants
