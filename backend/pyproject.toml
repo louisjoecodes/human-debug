@@ -17,6 +17,8 @@ dependencies = [
     "requests>=2.32.3",
     "pytest>=8.3.3",
     "ruff>=0.6.9",
+    "pip>=24.2",
+    "python-multipart>=0.0.12",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
