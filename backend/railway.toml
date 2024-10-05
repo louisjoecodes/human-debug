@@ -1,1 +1,8 @@
- 
+[build]
+builder = "nixpacks"
+buildCommand = "uv pip install ."
+
+[deploy]
+startCommand = "uv run uvicorn main:app --host 0.0.0.0 --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

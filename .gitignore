@@ -28,6 +28,7 @@ Thumbs.db
 
 # Temporary files
 *.tmp
+backend/data/*
 
 # Compiled files
 *.com
