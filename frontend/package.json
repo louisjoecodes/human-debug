@@ -24,5 +24,8 @@
     "turbo": "2.1.1",
     "typescript": "^5.5.4"
   },
-  "packageManager": "bun@1.1.26"
+  "packageManager": "bun@1.1.26",
+  "dependencies": {
+    "react-dropzone": "^14.2.9"
+  }
 }

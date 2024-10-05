@@ -38,7 +38,7 @@ export function NavUser({
               alt={user.full_name ?? ""}
               className="animate-in fade-in-50 zoom-in-90"
             />
-            <AvatarFallback className="rounded-md">CN</AvatarFallback>
+            <AvatarFallback className="rounded-md">LJ</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 leading-none">
             <div className="font-medium">{user.full_name}</div>
@@ -62,7 +62,7 @@ export function NavUser({
                 src={user.avatar_url ?? ""}
                 alt={user.full_name ?? ""}
               />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarFallback>LJ</AvatarFallback>
             </Avatar>
             <div className="grid flex-1">
               <div className="font-medium">{user.full_name}</div>

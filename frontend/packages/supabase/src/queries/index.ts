@@ -51,7 +51,11 @@ export async function getCaseById(id: string) {
   const supabase = createClient();
   return unstable_cache(
     async () => {
-      const result = await supabase.from("cases").select("*").eq("id", id);
+      const result = await supabase
+        .from("cases")
+        .select("*")
+        .eq("id", id)
+        .single();
       return result;
     },
     ["cases", id],

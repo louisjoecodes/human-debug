@@ -33,10 +33,7 @@ export async function CasesServer() {
           <div className="text-sm text-muted-foreground">
             Showing <strong>{data?.length || 0}</strong> cases
           </div>
-          <Button size="sm" className="h-8 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="whitespace-nowrap">New Case</span>
-          </Button>
+
         </div>
         <ScrollArea className="h-[calc(100vh-300px)]">
           <Table>
