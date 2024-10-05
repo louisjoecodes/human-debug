@@ -1,19 +1,22 @@
 import os
 import requests
-from fastapi import UploadFile, File
 from mistralai import Mistral
 import instructor
 import base64
+import pprint
 from typing import Literal
 from urllib.parse import quote
 
 from dotenv import load_dotenv
 import uvicorn
+from typing import Dict, List, Any
 from pydantic import BaseModel, Field
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
+pp = pprint.PrettyPrinter(indent=4)
+
 client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
 
 app = FastAPI(
@@ -21,6 +24,37 @@ app = FastAPI(
     description="An API that leverages AI to assist doctors in genetic diagnostics and interpretation of medical data.",
     version="1.0.0"
 )
+
+
+class Patient(BaseModel):
+    first_name: str
+    last_name: str
+    date_of_birth: str = Field(..., pattern=r'^\d{4}-\d{2}-\d{2}$', description="Date of birth in YYYY-MM-DD format")
+    gender: Literal["Female", "Male"]
+    age: int
+    disease: str = Field(..., description="The disease for ordering genomic test. Max 1-2 words")
+
+class Phenotype(BaseModel):
+    id: str = Field(..., description="The identifier for the phenotype")
+    name: str = Field(..., description="The name of the phenotype")
+    definition: str | None = Field(None, description="The definition of the phenotype")
+    comment: str | None = Field(None, description="Additional comments about the phenotype")
+    descendant_count: int = Field(..., description="The number of descendants for this phenotype")
+    synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
+    xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
+    translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
+
+class Disease(BaseModel):
+    id: str = Field(..., description="The identifier for the disease")
+    name: str = Field(..., description="The name of the disease")
+    mondoId: str = Field(..., description="The MONDO identifier for the disease")
+    description: str | None = Field(None, description="Optional description of the disease")
+
+
+class Gene(BaseModel):
+    id: str = Field(..., description="The identifier for the gene, e.g., 'NCBIGene:4340'")
+    name: str = Field(..., description="The name of the gene, e.g., 'MOG'")
+
 
 # Allow all CORS origins (for demo purposes only)
 app.add_middleware(
@@ -43,22 +77,26 @@ async def get_process_letter():
 async def process_letter():
     content = extract_letter_content()
     patient = extract_patient_info(content)
-    
+    phenotype_classes = fetch_phenotype_classes(patient.disease)
+
     print(f"content: {content}")
     print(f"patient: {patient.model_dump()}")
-
-    # Fetch related terms from the JAX ontology
-    ontology_terms = fetch_ontology_terms(patient.disease)
+    print(f"phenotype_classes: {phenotype_classes}")
     
     return {
         "patient": patient.model_dump(),
-        "ontology_terms": ontology_terms
+        "ontology_terms": phenotype_classes
     }
 
-@app.post("/structure_medical_history")
-async def structure_medical_history(content: str):
 
-    return {"message": "Please use POST to send in text"}
+@app.post("/analyze")
+async def analyze():
+    phenotype_ids = ["HP:0003002", "HP:0010619"]
+    annotations = list(map(lambda phenotype_id: fetch_annotation(phenotype_id=phenotype_id), phenotype_ids))
+
+    pp.pprint(annotations)
+    return annotations
+
 
 async def extract_letter_content(file=None):
 
@@ -98,15 +136,6 @@ def extract_patient_info(content):
     with open("data/doctor_letter.txt", "r") as file:
         content = file.read()
 
-    class Patient(BaseModel):
-        first_name: str
-        last_name: str
-        date_of_birth: str
-        gender: Literal["Female", "Male"]
-        age: int
-        disease: str = Field(..., description="The disease for ordering genomic test. Max 1-2 words")
-        
-
     patient = client.chat.completions.create(
         model="pixtral-12b-2409",
         response_model=Patient,
@@ -114,8 +143,6 @@ def extract_patient_info(content):
             {"role": "user", "content": f"Extract patient information from this text:\n\n{content}"}
         ],
     )
-
-    print(patient.model_dump())
 
     return patient
 
@@ -133,7 +160,7 @@ def encode_image(image_path):
         print(f"Error: {e}")
         return None
 
-def fetch_ontology_terms(disease):
+def fetch_phenotype_classes(disease):
     """Fetch related terms from the JAX ontology based on the patient's disease."""
     base_url = "https://ontology.jax.org/api/hp/search"
     encoded_disease = quote(disease)
@@ -159,6 +186,34 @@ def fetch_ontology_terms(disease):
     except requests.RequestException as e:
         print(f"Error fetching ontology terms: {e}")
         return []
+    
+def fetch_annotation(phenotype_id: str="HP:0003002") -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Fetch related diseases, genes, and medical actions for a given phenotype ID from the JAX ontology.
+    
+    Args:
+    phenotype_id (str): The HP (Human Phenotype) ID to query, e.g., "HP:0003002"
+
+    Returns:
+    Dict[str, List[Dict[str, Any]]]: A dictionary containing lists of related diseases, genes, and medical actions
+    """
+    base_url = "https://ontology.jax.org/api/network/annotation"
+    encoded_phenotype_id = quote(phenotype_id)
+    url = f"{base_url}/{encoded_phenotype_id}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        
+        return {
+            "diseases": data.get("diseases", []),
+            "genes": data.get("genes", []),
+            "medical_actions": data.get("medicalActions", [])
+        }
+    except requests.RequestException as e:
+        print(f"Error fetching phenotype network: {e}")
+        return {"diseases": [], "genes": [], "medical_actions": []}
 
 def start():
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
