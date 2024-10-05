@@ -1,10 +1,11 @@
 import os
-
+import requests
 from fastapi import UploadFile, File
 from mistralai import Mistral
 import instructor
 import base64
 from typing import Literal
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 import uvicorn
@@ -40,17 +41,19 @@ async def get_process_letter():
 
 @app.post("/process_letter")
 async def process_letter():
-
     content = extract_letter_content()
     patient = extract_patient_info(content)
-
+    
     print(f"content: {content}")
     print(f"patient: {patient.model_dump()}")
 
-
-    return patient
-
-
+    # Fetch related terms from the JAX ontology
+    ontology_terms = fetch_ontology_terms(patient.disease)
+    
+    return {
+        "patient": patient.model_dump(),
+        "ontology_terms": ontology_terms
+    }
 
 @app.post("/structure_medical_history")
 async def structure_medical_history(content: str):
@@ -101,7 +104,7 @@ def extract_patient_info(content):
         date_of_birth: str
         gender: Literal["Female", "Male"]
         age: int
-        disease: str = Field(..., description="The main reason for the genomic test")
+        disease: str = Field(..., description="The disease for ordering genomic test. Max 1-2 words")
         
 
     patient = client.chat.completions.create(
@@ -129,6 +132,33 @@ def encode_image(image_path):
     except Exception as e:
         print(f"Error: {e}")
         return None
+
+def fetch_ontology_terms(disease):
+    """Fetch related terms from the JAX ontology based on the patient's disease."""
+    base_url = "https://ontology.jax.org/api/hp/search"
+    encoded_disease = quote(disease)
+    url = f"{base_url}?q={encoded_disease}&page=1&limit=10"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        terms = data.get("terms", [])
+        
+        # Extract relevant information from each term
+        simplified_terms = [
+            {
+                "id": term["id"],
+                "name": term["name"],
+                "definition": term["definition"]
+            }
+            for term in terms
+        ]
+        
+        return simplified_terms
+    except requests.RequestException as e:
+        print(f"Error fetching ontology terms: {e}")
+        return []
 
 def start():
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
