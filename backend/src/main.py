@@ -1,19 +1,18 @@
 import os
 
-import base64
 from fastapi import UploadFile, File
 from mistralai import Mistral
-
-
-import utils
+import instructor
+import base64
+from typing import Literal
 
 from dotenv import load_dotenv
 import uvicorn
+from pydantic import BaseModel, Field
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
-
 client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
 
 app = FastAPI(
@@ -35,22 +34,34 @@ app.add_middleware(
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/extract_letter_content")
-async def get_extract_letter_content():
+@app.get("/process_letter")
+async def get_process_letter():
     return {"message": "Please use POST to upload a file"}
 
-@app.post("/extract_letter_content")
-async def extract_letter_content(file: UploadFile = File(...)):
-    # content = await file.read()
+@app.post("/process_letter")
+async def process_letter():
 
-    image_path = "data/doctor_letter_scan_0.jpg"
-    print(f"image_path: {image_path}")
+    content = extract_letter_content()
+    patient = extract_patient_info(content)
 
-    # Getting the base64 string
-    encoded_content = utils.encode_image(image_path)
-    print(f"encoded_content: {encoded_content}")
-    
-    # encoded_content = base64.b64encode(content).decode('utf-8')
+    print(f"content: {content}")
+    print(f"patient: {patient.model_dump()}")
+
+
+    return patient
+
+
+
+@app.post("/structure_medical_history")
+async def structure_medical_history(content: str):
+
+    return {"message": "Please use POST to send in text"}
+
+async def extract_letter_content(file=None):
+
+    image_path = "^data/doctor_letter_scan_0.jpg"
+    encoded_content = encode_image(image_path)
+
     messages = [
         {
             "role": "user",
@@ -77,11 +88,50 @@ async def extract_letter_content(file: UploadFile = File(...)):
     
     return {"content": transcribed_content}
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+def extract_patient_info(content):
+
+    client = instructor.from_mistral(Mistral(api_key=os.getenv("MISTRAL_API_KEY")))
+
+    with open("data/doctor_letter.txt", "r") as file:
+        content = file.read()
+
+    class Patient(BaseModel):
+        first_name: str
+        last_name: str
+        date_of_birth: str
+        gender: Literal["Female", "Male"]
+        age: int
+        disease: str = Field(..., description="The main reason for the genomic test")
+        
+
+    patient = client.chat.completions.create(
+        model="pixtral-12b-2409",
+        response_model=Patient,
+        messages=[
+            {"role": "user", "content": f"Extract patient information from this text:\n\n{content}"}
+        ],
+    )
+
+    print(patient.model_dump())
+
+    return patient
+
+
+
+def encode_image(image_path):
+    """Encode the image to base64."""
+    try:
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+    except FileNotFoundError:
+        print(f"Error: The file {image_path} was not found.")
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 def start():
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 if __name__ == "__main__":
     start()
