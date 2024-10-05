@@ -1,59 +1,59 @@
-# Patient Medical History Report
+Patient Medical History Report
 
-**Patient Name:** Sarah Elizabeth Thompson
-**DOB:** 03/15/1978
-**MRN:** 78234561
+Patient Name: Sarah Elizabeth Thompson
+DOB: 03/15/1978
+MRN: 78234561
 
-**Date of Report:** 10/05/2024
+Date of Report: 10/05/2024
 
-**Reason for Referral:** Genetic testing for BRCA1/BRCA2 mutations due to family history of breast cancer and patient's concerning breast changes.
+Reason for Referral: Genetic testing for BRCA1/BRCA2 mutations due to family history of breast cancer and patient's concerning breast changes.
 
-**Family History:**
+Family History:
 - Mother diagnosed with breast cancer at age 48, passed away at 53
 - Maternal aunt diagnosed with ovarian cancer at age 52, currently in remission
 - Paternal grandmother had breast cancer, diagnosed at 65, survived until 78
 
-**Patient History:**
+Patient History:
 Sarah Thompson, a 46-year-old female, presents with concerns about her breast cancer risk. Patient reports noticing a small, firm lump in her left breast during self-examination two weeks ago. No skin changes or nipple discharge observed.
 
-**Past Medical History:**
+Past Medical History:
 - Hypothyroidism, diagnosed 2015, well-controlled on levothyroxine
 - Migraine with aura, since age 25
 - Appendectomy, 2002
 - No history of breast biopsies or mammographic abnormalities
 
-**Obstetric History:**
+Obstetric History:
 - G2P2: Two full-term pregnancies (2008, 2011)
 - Breastfed both children for 12 months each
 
-**Medications:**
+Medications:
 1. Levothyroxine 100mcg daily
 2. Sumatriptan 50mg PRN for migraines
 3. Multivitamin daily
 
-**Allergies:** Penicillin (hives)
+Allergies: Penicillin (hives)
 
-**Social History:**
+Social History:
 - Non-smoker
 - Alcohol: 2-3 glasses of wine per week
 - Exercises 3-4 times per week (yoga and jogging)
 - Works as a high school teacher
 
-**Physical Examination:**
+Physical Examination:
 - BP: 118/76, HR: 72, Temp: 36.7°C
 - BMI: 24.8
 - Breasts: Small (approx. 1.5 cm), firm, mobile mass palpated in left breast at 2 o'clock position, 3 cm from nipple. No skin changes or nipple retraction.
 - Lymph nodes: No axillary or supraclavicular lymphadenopathy
 
-**Recent Investigations:**
+Recent Investigations:
 - Mammogram (09/28/2024): BI-RADS 4 - suspicious abnormality in left breast
 - Ultrasound (09/30/2024): 1.7 cm hypoechoic mass with irregular margins in left breast, corresponding to palpable lump
 
-**Plan:**
+Plan:
 1. Refer for genetic counseling and BRCA1/BRCA2 testing
 2. Schedule breast biopsy of suspicious left breast mass
 3. Discuss breast cancer screening options and risk-reduction strategies
 4. Follow-up appointment in 2 weeks to review results and further management
 
-**Referring Physician:** Dr. Jonathan A. Stevenson, MD
-**GP Practice:** Greenwood Family Medical Center
+Referring Physician: Dr. Jonathan A. Stevenson, MD
+GP Practice: Greenwood Family Medical Center
