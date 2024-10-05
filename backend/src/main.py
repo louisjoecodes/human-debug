@@ -81,7 +81,8 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"status": "ok"}
+
 
 @app.get("/process_letter")
 async def get_process_letter():
