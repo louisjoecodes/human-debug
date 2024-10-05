@@ -32,9 +32,9 @@ async def root():
 
 @app.get("/extract_letter_content")
 async def extract_letter_content():
-    # TODO: Implement actual image processing and OCR
-    with open("backend/data/doctor_letter.txt", "r") as file:
+    with open("data/doctor_letter.txt", "r") as file:
         content = file.read()
+        print(content)
     return {"content": content}
 
 if __name__ == "__main__":
