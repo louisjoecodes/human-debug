@@ -101,6 +101,35 @@ async def analyze():
     pp.pprint(annotations)
     return annotations
 
+@app.get("/gene_to_phenotypes/{gene_id}")
+async def gene_to_phenotypes(gene_id: str="NCBIGene:3161"):
+    """
+    Fetch associated phenotypes and diseases for a given gene ID.
+    
+    Args:
+    gene_id (str): The NCBI Gene ID, e.g., "NCBIGene:3161"
+
+    Returns:
+    Dict[str, List[Dict[str, Any]]]: A dictionary containing lists of associated diseases and phenotypes
+    """
+    base_url = "https://ontology.jax.org/api/network/annotation"
+    encoded_gene_id = quote(gene_id)
+    url = f"{base_url}/{encoded_gene_id}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        
+        return {
+            "diseases": [Disease(**disease) for disease in data.get("diseases", [])],
+            "phenotypes": [Phenotype(**phenotype) for phenotype in data.get("phenotypes", [])]
+        }
+    except requests.RequestException as e:
+        print(f"Error fetching gene: {e}")
+        return {"diseases": [], "phenotypes": []}
+
+
 
 async def extract_letter_content(file: UploadFile):
     content = await file.read()
