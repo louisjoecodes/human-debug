@@ -88,6 +88,7 @@ async def process_letter(file: UploadFile):
     print(f"phenotype_classes: {phenotype_classes}")
     
     return {
+        
         "patient": patient.model_dump(),
         "phenotype_classes": phenotype_classes
     }

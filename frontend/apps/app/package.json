@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@jbrowse/react-linear-genome-view": "^2.15.4",
     "@v1/analytics": "workspace:*",
     "@v1/kv": "workspace:*",
     "@v1/supabase": "workspace:*",

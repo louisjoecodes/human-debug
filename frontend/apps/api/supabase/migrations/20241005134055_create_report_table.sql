@@ -2,6 +2,7 @@
 CREATE TABLE reports (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   case_id uuid NOT NULL,
+  content_json JSONB,
   created_at timestamptz NOT NULL DEFAULT NOW(),
   updated_at timestamptz NOT NULL DEFAULT NOW()
 );

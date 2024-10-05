@@ -33,7 +33,7 @@ import { useEffect, useState } from "react";
 const data = {
   teams: [
     {
-      name: "NHS Genomics 🧪",
+      name: "Genomics Lab 🧪",
       logo: Atom,
       plan: "Enterprise",
     }

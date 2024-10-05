@@ -47,6 +47,38 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          case_id: string
+          content_json: Json | null
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          content_json?: Json | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          content_json?: Json | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_reports_case"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null

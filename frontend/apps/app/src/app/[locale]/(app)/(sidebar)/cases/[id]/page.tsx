@@ -5,8 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@v1/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@v1/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@v1/ui/tabs";
 import { ChevronRight, Stethoscope } from "lucide-react";
+import { GenomeAnalyser } from "@/components/genome-analyser";
 import { PatientHistoryDropzone } from "@/components/patient-history-dropzone";
 import { createClient } from "@v1/supabase/server";
+import { ReportViewer } from "@/components/report-viewer";
+import { PhenotypeViewer } from "@/components/phenotype-viewer";
+import { AnalysisViewer } from "@/components/analysis-viewer";
 
 export default async function Page({ params }: { params: { id: string } }) {
     const { data } = await getCaseById(params.id);
@@ -38,24 +42,21 @@ export default async function Page({ params }: { params: { id: string } }) {
             <Tabs defaultValue="overview">
                 <TabsList className="mb-6">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="appointments">Appointments</TabsTrigger>
+                    <TabsTrigger value="phenotype">Phenotype Data 🧬</TabsTrigger>
+                    <TabsTrigger value="sequencing">Genome Data 🧬</TabsTrigger>
+                    <TabsTrigger value="analysis">Analysis 🧪</TabsTrigger>
+                    {/* <TabsTrigger value="appointments">Appointments</TabsTrigger>
                     <TabsTrigger value="medications">Medications</TabsTrigger>
-                    <TabsTrigger value="notes">Notes</TabsTrigger>
+                    <TabsTrigger value="notes">Notes</TabsTrigger> */}
+
                 </TabsList>
                 <TabsContent value="overview">
-                    <Card className="mb-6">
-                        <CardHeader>
-                            <CardTitle>Upload Patient History</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <PatientHistoryDropzone caseId={id} />
-                        </CardContent>
-                    </Card>
                     <Card className="md:col-span-2">
                         <CardHeader>
                             <CardTitle>Recent Medical History</CardTitle>
                         </CardHeader>
                         <CardContent>
+                            <PatientHistoryDropzone caseId={id} />
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -71,14 +72,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                                                 <TableCell>{new Date(report.created_at).toLocaleDateString()}</TableCell>
                                                 <TableCell>{report.name}</TableCell>
                                                 <TableCell>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-
-                                                    >
-                                                        View Report
-                                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                                    </Button>
+                                                    <ReportViewer caseId={id} data={report} />
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -92,6 +86,9 @@ export default async function Page({ params }: { params: { id: string } }) {
                         </CardContent>
                     </Card>
 
+                </TabsContent>
+                <TabsContent value="phenotype">
+                    <PhenotypeViewer caseId={id} />
                 </TabsContent>
                 <TabsContent value="appointments">
                     <Card>
@@ -199,6 +196,19 @@ export default async function Page({ params }: { params: { id: string } }) {
                             </div>
                         </CardContent>
                     </Card>
+                </TabsContent>
+                <TabsContent value="sequencing">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Genome Sequencing</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <GenomeAnalyser />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="analysis">
+                    <AnalysisViewer caseId={id} />
                 </TabsContent>
             </Tabs>
         </>
