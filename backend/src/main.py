@@ -133,56 +133,38 @@ async def gene_to_phenotypes(gene_id: str="NCBIGene:3161"):
 
 async def extract_letter_content(file: UploadFile):
     content = await file.read()
-    images = []
+    images: List[Image.Image] = []
 
     if file.content_type == "application/pdf":
-        # Convert PDF to images
-        pdf_images = convert_from_bytes(content, fmt='jpeg')
-        images = [img for img in pdf_images]
+        images = convert_from_bytes(content, fmt='jpeg')
     elif file.content_type in ["image/jpeg", "image/png"]:
-        # If it's already an image, just use it
-        image = Image.open(io.BytesIO(content))
-        images = [image]
+        images = [Image.open(io.BytesIO(content))]
     else:
         raise ValueError(f"Unsupported file type: {file.content_type}")
 
-
-    transcribed_contents = []
-
-
+    transcribed_contents: List[str] = []
 
     for img in images:
-        # Convert PIL Image to bytes
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format='JPEG')
         encoded_content = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
 
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Please transcribe the content of this image."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": f"data:image/jpeg;base64,{encoded_content}"
-                    }
-                ]
-            }
-        ]
+        message = {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Please transcribe the content of this image."},
+                {"type": "image_url", "image_url": f"data:image/jpeg;base64,{encoded_content}"}
+            ]
+        }
         
+        chat_response = client.chat.complete(
+            model="pixtral-12b-2409",
+            messages=[message]
+        )
+        
+        transcribed_contents.append(chat_response.choices[0].message.content)
     
-    chat_response = client.chat.complete(
-        model="pixtral-12b-2409",
-        messages=messages
-    )
-    
-    # Combine all transcribed contents
     full_transcription = "\n\n".join(transcribed_contents)
-    print(full_transcription)
-    
     return {"content": full_transcription}
 
 def extract_patient_info(content):
