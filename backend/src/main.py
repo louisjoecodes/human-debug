@@ -78,6 +78,7 @@ async def get_process_letter():
 
 @app.post("/process_letter")
 async def process_letter(file: UploadFile):
+    print("PROCESSING LETTER", file)
     content = extract_letter_content(file)
     patient = extract_patient_info(content)
     phenotype_classes = fetch_phenotype_classes(patient.disease)
@@ -88,7 +89,7 @@ async def process_letter(file: UploadFile):
     
     return {
         "patient": patient.model_dump(),
-        "ontology_terms": phenotype_classes
+        "phenotype_classes": phenotype_classes
     }
 
 

@@ -27,8 +27,9 @@ export const PatientHistoryDropzone = ({ caseId }: { caseId: string }) => {
                 .from('reports')
                 .upload(`${caseId}/${id}`, file);
 
-
             const formData = new FormData();
+            formData.append('file', file);
+
             const response = await axios.post('http://localhost:8000/process_letter', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
