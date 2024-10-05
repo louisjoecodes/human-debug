@@ -42,7 +42,6 @@ export default function VoiceTestPage() {
         setIsPlaying(false);
       };
     } catch (error) {
-      console.error("Error playing audio:", error);
       setIsPlaying(false);
     }
   };

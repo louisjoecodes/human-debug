@@ -17,84 +17,45 @@ export async function updateUser(userId: string, data: TablesUpdate<"users">) {
   }
 }
 
-export async function createKnowledge(knowledge: TablesInsert<"knowledge">) {
+export async function createCase(caseInsert: TablesInsert<"cases">) {
   const supabase = createClient();
 
+  console.log("CRETING CASE");
   try {
-    // Insert knowledge
-    const { data: insertedKnowledge, error: insertError } = await supabase
-      .from("knowledge")
-      .insert(knowledge)
+    // Insert Case
+    const { data: createdCase, error: insertError } = await supabase
+      .from("cases")
+      .insert(caseInsert)
       .select()
       .single();
 
     if (insertError) throw insertError;
+    console.log(createdCase);
+    console.log(insertError);
 
-    // Generate embeddings
-    const embeddings = await generateEmbeddings(insertedKnowledge.content);
+    // // Generate embeddings
+    // const embeddings = await generateEmbeddings(insertedKnowledge.content);
 
-    // Insert embeddings
-    const { error: embeddingError } = await supabase
-      .from("knowledge_content_embeddings")
-      .insert(
-        embeddings.map((embedding) => ({
-          knowledge_id: insertedKnowledge.id,
-          content: embedding.content,
-          embedding: JSON.stringify(embedding.embedding),
-        })),
-      );
-    console.log(embeddingError);
+    // // Insert embeddings
+    // const { error: embeddingError } = await supabase
+    //   .from("knowledge_content_embeddings")
+    //   .insert(
+    //     embeddings.map((embedding) => ({
+    //       knowledge_id: insertedKnowledge.id,
+    //       content: embedding.content,
+    //       embedding: JSON.stringify(embedding.embedding),
+    //     }))
+    //   );
+    // console.log(embeddingError);
 
-    if (embeddingError) throw embeddingError;
+    // if (embeddingError) throw embeddingError;
 
     return {
-      message: "Knowledge successfully created and embedded.",
-      data: insertedKnowledge,
+      message: "Case successfully created.",
+      data: createdCase,
     };
   } catch (error) {
     logger.error(error);
     return { message: "Error creating knowledge and embeddings", error };
-  }
-}
-
-export async function createMember(member: TablesInsert<"members">) {
-  const supabase = createClient();
-
-  try {
-    // Insert member
-    const { data: insertedMember, error: insertError } = await supabase
-      .from("members")
-      .insert(member)
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
-
-    // Generate embeddings
-    const embeddings = await generateEmbeddings(
-      insertedMember.role_description,
-    );
-
-    // Insert embeddings
-    const { error: embeddingError } = await supabase
-      .from("members_role_description_embeddings")
-      .insert(
-        embeddings.map(({ embedding, content }) => ({
-          member_id: insertedMember.id,
-          role_description: content,
-          embedding: JSON.stringify(embedding),
-        })),
-      );
-    console.log(embeddingError);
-
-    if (embeddingError) throw embeddingError;
-
-    return {
-      message: "Member successfully created and embedded.",
-      data: insertedMember,
-    };
-  } catch (error) {
-    logger.error(error);
-    return { message: "Error creating member and embeddings", error };
   }
 }

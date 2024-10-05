@@ -9,130 +9,40 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      knowledge: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_knowledge_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      knowledge_content_embeddings: {
-        Row: {
-          content: string
-          embedding: string
-          id: string
-          knowledge_id: string | null
-        }
-        Insert: {
-          content: string
-          embedding: string
-          id?: string
-          knowledge_id?: string | null
-        }
-        Update: {
-          content?: string
-          embedding?: string
-          id?: string
-          knowledge_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "knowledge_content_embeddings_knowledge_id_fkey"
-            columns: ["knowledge_id"]
-            isOneToOne: false
-            referencedRelation: "knowledge"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      members: {
+      cases: {
         Row: {
           created_at: string
-          full_name: string
+          date_of_birth: string
+          first_name: string
           id: string
-          phone_number: string
-          role_description: string
+          last_name: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          full_name: string
+          date_of_birth: string
+          first_name: string
           id?: string
-          phone_number: string
-          role_description: string
+          last_name: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          full_name?: string
+          date_of_birth?: string
+          first_name?: string
           id?: string
-          phone_number?: string
-          role_description?: string
+          last_name?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_members_user"
+            foreignKeyName: "fk_cases_user"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      members_role_description_embeddings: {
-        Row: {
-          embedding: string
-          id: string
-          member_id: string | null
-          role_description: string
-        }
-        Insert: {
-          embedding: string
-          id?: string
-          member_id?: string | null
-          role_description: string
-        }
-        Update: {
-          embedding?: string
-          id?: string
-          member_id?: string | null
-          role_description?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "members_role_description_embeddings_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
@@ -177,196 +87,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-      cosine_similarity_search_knowledge: {
-        Args: {
-          query_embedding: string
-        }
-        Returns: {
-          content: string
-          similarity: number
-        }[]
-      }
-      cosine_similarity_search_members: {
-        Args: {
-          query_embedding: string
-        }
-        Returns: {
-          role_description: string
-          similarity: number
-        }[]
-      }
-      halfvec_avg: {
-        Args: {
-          "": number[]
-        }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: number
-      }
-      hnsw_bit_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      ivfflat_bit_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      l2_norm:
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-      l2_normalize:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-      sparsevec_out: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: number
-      }
-      vector_avg: {
-        Args: {
-          "": number[]
-        }
-        Returns: string
-      }
-      vector_dims:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-      vector_norm: {
-        Args: {
-          "": string
-        }
-        Returns: number
-      }
-      vector_out: {
-        Args: {
-          "": string
-        }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: number
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

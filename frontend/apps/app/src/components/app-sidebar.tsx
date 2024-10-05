@@ -2,28 +2,21 @@
 
 import {
   Atom,
-  Bird,
-  BookOpen,
-  Bot,
-  Code2,
-  Eclipse,
   Frame,
   History,
+  Hospital,
   LifeBuoy,
   Phone,
   PieChart,
-  Rabbit,
   Send,
-  Settings2,
-  SquareTerminal,
-  Star,
-  Turtle,
+  BriefcaseMedical,
+  SquareTerminal
 } from "lucide-react";
 
 import { NavUser } from "@/components/app-sidebar-nav-user";
 import type { Database } from "@v1/supabase/types";
 import { NavMain } from "@v1/ui/nav-main";
-import { NavProjects } from "@v1/ui/nav-projects";
+import { NavCases } from "@v1/ui/nav-cases";
 import { NavSecondary } from "@v1/ui/nav-secondary";
 import {
   Sidebar,
@@ -35,23 +28,15 @@ import {
 } from "@v1/ui/sidebar";
 import { StorageCard } from "@v1/ui/storage-card";
 import { TeamSwitcher } from "@v1/ui/team-switcher";
+import { createClient } from "@v1/supabase/client";
+import { useEffect, useState } from "react";
 const data = {
   teams: [
     {
-      name: "Acme Inc",
+      name: "NHS Genomics 🧪",
       logo: Atom,
       plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: Eclipse,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Rabbit,
-      plan: "Free",
-    },
+    }
   ],
   user: {
     name: "shadcn",
@@ -60,127 +45,17 @@ const data = {
   },
   navMain: [
     {
-      title: "Company Setup",
+      title: "Case Management",
       url: "#",
-      icon: SquareTerminal,
+      icon: Hospital,
       isActive: true,
       items: [
         {
-          title: "Knowledge",
-          url: "/knowledge",
+          title: "Cases",
+          url: "/cases",
           icon: History,
-          description: "View your knowledge",
-        },
-        {
-          title: "Members",
-          url: "/members",
-          icon: Phone,
-          description: "Build your phone",
-        },
-        {
-          title: "Phone Builder",
-          url: "/phone",
-          icon: Phone,
-          description: "Build your phone",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-          icon: Rabbit,
-          description: "Our fastest model for general use cases.",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-          icon: Bird,
-          description: "Performance and speed for efficiency.",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-          icon: Turtle,
-          description: "The most powerful model for complex computations.",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "API",
-      url: "#",
-      icon: Code2,
-      items: [
-        {
-          title: "Chat",
-          url: "#",
-        },
-        {
-          title: "Completion",
-          url: "#",
-        },
-        {
-          title: "Images",
-          url: "#",
-        },
-        {
-          title: "Video",
-          url: "#",
-        },
-        {
-          title: "Speech",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
+          description: "View your cases",
+        }
       ],
     },
   ],
@@ -195,18 +70,6 @@ const data = {
       title: "Feedback",
       url: "#",
       icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
     },
   ],
   searchResults: [
@@ -246,6 +109,25 @@ const data = {
 export function AppSidebar({
   user,
 }: { user: Database["public"]["Tables"]["users"]["Row"] }) {
+  const client = createClient();
+
+  const [cases, setCases] = useState([]);
+
+  useEffect(() => {
+    const fetchCases = async () => {
+      const { data, error } = await client.from("cases").select("*");
+      if (error) {
+        console.error("Error fetching cases:", error);
+      } else {
+        setCases(data as any);
+      }
+    };
+
+    fetchCases();
+  }, []);
+
+  console.log(cases);
+  console.log("____")
   return (
     <Sidebar>
       <SidebarHeader>
@@ -257,8 +139,8 @@ export function AppSidebar({
           <NavMain items={data.navMain} searchResults={data.searchResults} />
         </SidebarItem>
         <SidebarItem>
-          <SidebarLabel>Projects</SidebarLabel>
-          <NavProjects projects={data.projects} />
+          <SidebarLabel>Cases</SidebarLabel>
+          <NavCases cases={cases} />
         </SidebarItem>
         <SidebarItem className="mt-auto">
           <SidebarLabel>Help</SidebarLabel>

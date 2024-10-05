@@ -4,16 +4,16 @@ import { Button } from "@v1/ui/button";
 import { RefreshCwIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { refreshKnowledgeAction } from "@/actions/knowledge/refresh-knowledge-action";
+import { refreshCasesAction } from "@/actions/cases/refresh-cases-action";
 
-export function KnowledgeRefreshButton() {
+export function CasesRefreshButton() {
   return (
     <Button
       variant="outline"
       size="icon"
       onClick={async () => {
-        await refreshKnowledgeAction({});
-        toast.success("Knowledge refreshed ");
+        await refreshCasesAction({});
+        toast.success("Cases refreshed ");
       }}
     >
       <RefreshCwIcon className="h-3 w-3" />

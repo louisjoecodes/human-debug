@@ -27,24 +27,38 @@ export async function getUser() {
   }
 }
 
-export async function getKnowledge() {
+export async function getCases() {
   const supabase = createClient();
-  console.log("fetching knowledge");
   return unstable_cache(
     async () => {
       try {
-        const result = await supabase.from("knowledge").select("*");
+        const result = await supabase.from("cases").select("*");
         return result;
       } catch (error) {
         logger.error(error);
         throw error;
       }
     },
-    ["knowledge"],
+    ["cases"],
     {
-      tags: ["knowledge"],
+      tags: ["cases"],
       revalidate: 100,
+    }
+  )();
+}
+
+export async function getCaseById(id: string) {
+  const supabase = createClient();
+  return unstable_cache(
+    async () => {
+      const result = await supabase.from("cases").select("*").eq("id", id);
+      return result;
     },
+    ["cases", id],
+    {
+      tags: ["cases", id],
+      revalidate: 100,
+    }
   )();
 }
 
@@ -65,7 +79,7 @@ export async function getUsers() {
     {
       tags: ["users"],
       revalidate: 100,
-    },
+    }
   )();
 }
 
@@ -86,6 +100,6 @@ export async function getMembers() {
     {
       tags: ["members"],
       revalidate: 100,
-    },
+    }
   )();
 }

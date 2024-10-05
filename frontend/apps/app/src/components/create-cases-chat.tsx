@@ -4,9 +4,9 @@ import { Button } from "@v1/ui/button";
 import { useChat } from "ai/react";
 import { revalidateTag } from "next/cache";
 
-export function CreateKnowledgeChat() {
+export function CreateCasesChat() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/chat/knowledge",
+    api: "/api/chat/cases",
     maxToolRoundtrips: 2,
   });
   return (

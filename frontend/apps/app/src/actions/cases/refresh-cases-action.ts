@@ -4,11 +4,11 @@ import { authActionClient } from "@/actions/safe-action";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 
-export const refreshKnowledgeAction = authActionClient
+export const refreshCasesAction = authActionClient
   .schema(z.object({}))
   .metadata({
-    name: "refresh-knowledge",
+    name: "refresh-cases",
   })
   .action(async () => {
-    revalidateTag("knowledge");
+    revalidateTag("cases");
   });
