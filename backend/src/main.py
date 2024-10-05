@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import uvicorn
 from typing import Dict, List, Any
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
@@ -41,11 +41,11 @@ class Phenotype(BaseModel):
     id: str = Field(..., description="The identifier for the phenotype")
     name: str = Field(..., description="The name of the phenotype")
     definition: str | None = Field(None, description="The definition of the phenotype")
-    # comment: str | None = Field(None, description="Additional comments about the phenotype")
-    # descendant_count: int = Field(..., description="The number of descendants for this phenotype")
-    # synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
-    # xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
-    # translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
+    comment: str | None = Field(None, description="Additional comments about the phenotype")
+    descendant_count: int = Field(..., description="The number of descendants for this phenotype")
+    synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
+    xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
+    translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
 
 class Disease(BaseModel):
     id: str = Field(..., description="The identifier for the disease")
@@ -57,6 +57,17 @@ class Disease(BaseModel):
 class Gene(BaseModel):
     id: str = Field(..., description="The identifier for the gene, e.g., 'NCBIGene:4340'")
     name: str = Field(..., description="The name of the gene, e.g., 'MOG'")
+
+
+class Variant(BaseModel):
+    chromosome: str = Field(..., description="Chromosome where the variant is located")
+    position: int = Field(..., description="Position of the variant on the chromosome")
+    reference: str = Field(..., description="Reference allele")
+    alternate: str = Field(..., description="Alternate allele")
+    gene: str = Field(..., description="Gene affected by the variant")
+    consequence: str = Field(..., description="Predicted consequence of the variant")
+    significance: str = Field(..., description="Clinical significance of the variant")
+
 
 
 # Allow all CORS origins (for demo purposes only)
@@ -93,6 +104,10 @@ async def process_letter(file: UploadFile):
         "phenotype_classes": phenotype_classes
     }
 
+@app.post("/extract_text")
+async def extract_text(file: UploadFile):
+    content = await extract_letter_content(file)
+    return content
 
 @app.post("/analyze")
 async def analyze():
@@ -102,59 +117,70 @@ async def analyze():
     pp.pprint(annotations)
     return annotations
 
+@app.get("/gene_to_phenotypes/{gene_id}")
+async def gene_to_phenotypes(gene_id: str="NCBIGene:3161"):
+    """
+    Fetch associated phenotypes and diseases for a given gene ID.
+    
+    Args:
+    gene_id (str): The NCBI Gene ID, e.g., "NCBIGene:3161"
+
+    Returns:
+    Dict[str, List[Dict[str, Any]]]: A dictionary containing lists of associated diseases and phenotypes
+    """
+    base_url = "https://ontology.jax.org/api/network/annotation"
+    encoded_gene_id = quote(gene_id)
+    url = f"{base_url}/{encoded_gene_id}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        
+        return {
+            "diseases": [Disease(**disease) for disease in data.get("diseases", [])],
+            "phenotypes": [Phenotype(**phenotype) for phenotype in data.get("phenotypes", [])]
+        }
+    except requests.RequestException as e:
+        print(f"Error fetching gene: {e}")
+        return {"diseases": [], "phenotypes": []}
+
+
 
 async def extract_letter_content(file: UploadFile):
     content = await file.read()
-    images = []
+    images: List[Image.Image] = []
 
     if file.content_type == "application/pdf":
-        # Convert PDF to images
-        pdf_images = convert_from_bytes(content, fmt='jpeg')
-        images = [img for img in pdf_images]
+        images = convert_from_bytes(content, fmt='jpeg')
     elif file.content_type in ["image/jpeg", "image/png"]:
-        # If it's already an image, just use it
-        image = Image.open(io.BytesIO(content))
-        images = [image]
+        images = [Image.open(io.BytesIO(content))]
     else:
         raise ValueError(f"Unsupported file type: {file.content_type}")
 
-
-    transcribed_contents = []
-
-
+    transcribed_contents: List[str] = []
 
     for img in images:
-        # Convert PIL Image to bytes
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format='JPEG')
         encoded_content = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
 
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Please transcribe the content of this image."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": f"data:image/jpeg;base64,{encoded_content}"
-                    }
-                ]
-            }
-        ]
+        message = {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Please transcribe the content of this image."},
+                {"type": "image_url", "image_url": f"data:image/jpeg;base64,{encoded_content}"}
+            ]
+        }
         
+        chat_response = client.chat.complete(
+            model="pixtral-12b-2409",
+            messages=[message]
+        )
+        
+        transcribed_contents.append(chat_response.choices[0].message.content)
     
-    chat_response = client.chat.complete(
-        model="pixtral-12b-2409",
-        messages=messages
-    )
-    
-    # Combine all transcribed contents
     full_transcription = "\n\n".join(transcribed_contents)
-    print(full_transcription)
-    
     return {"content": full_transcription}
 
 def extract_patient_info(content):
@@ -248,3 +274,58 @@ def start():
 
 if __name__ == "__main__":
     start()
+
+@app.get("/variants")
+async def get_variants() -> List[Variant]:
+    """
+    Return a list of mocked variants identified from genomic analysis.
+    This endpoint is for frontend development purposes.
+    """
+    mock_variants = [
+        Variant(
+            chromosome="1",
+            position=69897,
+            reference="A",
+            alternate="G",
+            gene="OR4F5",
+            consequence="missense_variant",
+            significance="Uncertain significance"
+        ),
+        Variant(
+            chromosome="7",
+            position=117199644,
+            reference="ATCT",
+            alternate="A",
+            gene="CFTR",
+            consequence="frameshift_variant",
+            significance="Pathogenic"
+        ),
+        Variant(
+            chromosome="17",
+            position=41197708,
+            reference="G",
+            alternate="A",
+            gene="BRCA1",
+            consequence="stop_gained",
+            significance="Likely pathogenic"
+        ),
+        Variant(
+            chromosome="X",
+            position=31496081,
+            reference="C",
+            alternate="T",
+            gene="DMD",
+            consequence="splice_donor_variant",
+            significance="Pathogenic"
+        ),
+        Variant(
+            chromosome="4",
+            position=1807894,
+            reference="G",
+            alternate="A",
+            gene="FGFR3",
+            consequence="missense_variant",
+            significance="Benign"
+        )
+    ]
+    return mock_variants
