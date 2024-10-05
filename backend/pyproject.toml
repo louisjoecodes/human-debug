@@ -1,24 +1,33 @@
-[tool.poetry]
+[project]
 name = "backend"
 version = "0.1.0"
 description = ""
-authors = ["louis <louisjoejordan@gmail.com>"]
+authors = [
+    {name = "louis", email = "louisjoejordan@gmail.com"},
+    {name = "leander", email = "l.maerkisch@gmail.com"}
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.6",
+    "elevenlabs>=1.9.0",
+    "python-dotenv>=1.0.1",
+    "websockets>=13.0.1",
+    "openai>=1.46.0",
+]
+requires-python = ">=3.12"
 readme = "README.md"
-packages = [{ include = "src" }]
 
-[tool.poetry.scripts]
+[project.scripts]
 start = "src.main:start"
 
-[tool.poetry.dependencies]
-python = "^3.12"
-fastapi = "^0.115.0"
-uvicorn = "^0.30.6"
-elevenlabs = "^1.9.0"
-python-dotenv = "^1.0.1"
-websockets = "^13.0.1"
-openai = "^1.46.0"
-
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv"]
+build-backend = "uv.builders.python"
+
+# Added pytest configuration
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

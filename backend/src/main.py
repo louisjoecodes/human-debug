@@ -30,6 +30,13 @@ app.add_middleware(
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/extract_letter_content")
+async def extract_letter_content():
+    # TODO: Implement actual image processing and OCR
+    with open("backend/data/doctor_letter.txt", "r") as file:
+        content = file.read()
+    return {"content": content}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
