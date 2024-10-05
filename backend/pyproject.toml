@@ -26,6 +26,9 @@ dependencies = [
 requires-python = ">=3.12"
 readme = "README.md"
 
+[tool.setuptools]
+packages = ["src"]
+
 [project.scripts]
 start = "src.main:start"
 
