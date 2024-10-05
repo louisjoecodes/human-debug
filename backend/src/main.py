@@ -89,7 +89,6 @@ async def get_process_letter():
 
 @app.post("/process_letter")
 async def process_letter(file: UploadFile):
-    print("PROCESSING LETTER", file)
     content = extract_letter_content(file)
     patient = extract_patient_info(content)
     phenotype_classes = fetch_phenotype_classes(patient.disease)
@@ -272,9 +271,6 @@ def fetch_annotation(phenotype_id: str="HP:0003002") -> Dict[str, List[Dict[str,
 def start():
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
 
-if __name__ == "__main__":
-    start()
-
 @app.get("/variants")
 async def get_variants() -> List[Variant]:
     """
@@ -329,3 +325,7 @@ async def get_variants() -> List[Variant]:
         )
     ]
     return mock_variants
+
+
+if __name__ == "__main__":
+    start()
