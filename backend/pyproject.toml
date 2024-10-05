@@ -9,10 +9,16 @@ authors = [
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.30.6",
-    "elevenlabs>=1.9.0",
     "python-dotenv>=1.0.1",
     "websockets>=13.0.1",
     "openai>=1.46.0",
+    "mistralai>=1.1.0",
+    "instructor>=1.5.1",
+    "requests>=2.32.3",
+    "pytest>=8.3.3",
+    "ruff>=0.6.9",
+    "pip>=24.2",
+    "python-multipart>=0.0.12",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
@@ -21,8 +27,8 @@ readme = "README.md"
 start = "src.main:start"
 
 [build-system]
-requires = ["uv"]
-build-backend = "uv.builders.python"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 # Added pytest configuration
 [tool.pytest.ini_options]
