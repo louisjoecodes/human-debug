@@ -48,11 +48,11 @@ async def process_letter():
     print(f"patient: {patient.model_dump()}")
 
     # Fetch related terms from the JAX ontology
-    ontology_terms = fetch_ontology_terms(patient.disease)
+    phenotype_classes = fetch_phenotype_classes(patient.disease)
     
     return {
         "patient": patient.model_dump(),
-        "ontology_terms": ontology_terms
+        "ontology_terms": phenotype_classes
     }
 
 @app.post("/structure_medical_history")
@@ -133,7 +133,7 @@ def encode_image(image_path):
         print(f"Error: {e}")
         return None
 
-def fetch_ontology_terms(disease):
+def fetch_phenotype_classes(disease):
     """Fetch related terms from the JAX ontology based on the patient's disease."""
     base_url = "https://ontology.jax.org/api/hp/search"
     encoded_disease = quote(disease)
