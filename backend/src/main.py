@@ -268,9 +268,6 @@ def fetch_annotation(phenotype_id: str="HP:0003002") -> Dict[str, List[Dict[str,
         print(f"Error fetching phenotype network: {e}")
         return {"diseases": [], "genes": [], "medical_actions": []}
 
-def start():
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
-
 @app.get("/variants")
 async def get_variants() -> List[Variant]:
     """
@@ -326,6 +323,9 @@ async def get_variants() -> List[Variant]:
     ]
     return mock_variants
 
+
+def start():
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
 
 if __name__ == "__main__":
     start()
