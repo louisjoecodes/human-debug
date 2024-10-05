@@ -1,12 +1,8 @@
 [build]
 builder = "nixpacks"
-buildCommand = """
-  curl -LsSf https://astral.sh/uv/install.sh | sh && \
-  export PATH="/root/.cargo/bin:$PATH" && \
-  uv pip install .
-"""
+buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-startCommand = "uv run uvicorn src.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "python -m uvicorn src.main:app --host 0.0.0.0 --port $PORT"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
