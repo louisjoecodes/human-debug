@@ -92,6 +92,10 @@ async def process_letter(file: UploadFile):
         "phenotype_classes": phenotype_classes
     }
 
+@app.post("/extract_text")
+async def extract_text(file: UploadFile):
+    content = await extract_letter_content(file)
+    return content
 
 @app.post("/analyze")
 async def analyze():
