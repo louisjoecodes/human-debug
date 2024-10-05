@@ -43,7 +43,7 @@ export async function getCases() {
     {
       tags: ["cases"],
       revalidate: 100,
-    }
+    },
   )();
 }
 
@@ -62,7 +62,7 @@ export async function getCaseById(id: string) {
     {
       tags: ["cases", id],
       revalidate: 100,
-    }
+    },
   )();
 }
 
@@ -83,7 +83,7 @@ export async function getUsers() {
     {
       tags: ["users"],
       revalidate: 100,
-    }
+    },
   )();
 }
 
@@ -104,6 +104,6 @@ export async function getMembers() {
     {
       tags: ["members"],
       revalidate: 100,
-    }
+    },
   )();
 }

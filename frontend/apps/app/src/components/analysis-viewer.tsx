@@ -1,61 +1,66 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { createClient } from "@v1/supabase/client"
-import { AnalysisChat } from "./analysis-chat"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@v1/ui/card"
-import { Heatmap } from "@/components/heatmap"
+import { useState, useEffect } from "react";
+import { createClient } from "@v1/supabase/client";
+import { AnalysisChat } from "./analysis-chat";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@v1/ui/card";
+import { Heatmap } from "@/components/heatmap";
 
 export function AnalysisViewer({ caseId }: { caseId: string }) {
-    const [patientData, setPatientData] = useState<any>(null)
-    const [phenotypes, setPhenotypes] = useState<any[]>([])
+    const [patientData, setPatientData] = useState<any>(null);
+    const [phenotypes, setPhenotypes] = useState<any[]>([]);
     const [variants, setVariants] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchVariants = async () => {
             try {
-                const response = await fetch('http://localhost:8000/variants');
+                const response = await fetch("http://localhost:8000/variants");
                 const data = await response.json();
                 setVariants(data);
             } catch (error) {
-                console.error('Error fetching variants:', error);
+                console.error("Error fetching variants:", error);
             }
         };
 
         fetchVariants();
     }, []);
 
-
     useEffect(() => {
         async function fetchPatientData() {
-            const supabase = createClient()
+            const supabase = createClient();
             const { data, error } = await supabase
-                .from('reports')
-                .select('content_json, created_at')
-                .eq('case_id', caseId)
-                .order('created_at', { ascending: true })
+                .from("reports")
+                .select("content_json, created_at")
+                .eq("case_id", caseId)
+                .order("created_at", { ascending: true });
 
             if (error) {
-                console.error('Error fetching patient data:', error)
+                console.error("Error fetching patient data:", error);
             } else if (data && data.length > 0) {
-                setPatientData(data[0].content_json)
+                setPatientData(data[0].content_json);
 
-                const uniquePhenotypes = new Map()
-                data.forEach(report => {
-                    report.content_json.phenotype_classes.forEach(phenotype => {
+                const uniquePhenotypes = new Map();
+                data.forEach((report) => {
+                    report.content_json.phenotype_classes.forEach((phenotype) => {
                         uniquePhenotypes.set(phenotype.id, {
                             ...phenotype,
-                            created_at: report.created_at
-                        })
-                    })
-                })
+                            created_at: report.created_at,
+                        });
+                    });
+                });
 
-                setPhenotypes(Array.from(uniquePhenotypes.values()))
+                setPhenotypes(Array.from(uniquePhenotypes.values()));
             }
         }
 
-        fetchPatientData()
-    }, [caseId])
+        fetchPatientData();
+    }, [caseId]);
 
     return (
         <div>
@@ -88,5 +93,5 @@ export function AnalysisViewer({ caseId }: { caseId: string }) {
                 </div>
             </div>
         </div>
-    )
+    );
 }

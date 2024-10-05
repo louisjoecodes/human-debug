@@ -1,13 +1,27 @@
 import { CaseDeleteButton } from "@/components/cases/cases-delete-button";
 import Link from "next/link";
 import { getCases } from "@v1/supabase/queries";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@v1/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@v1/ui/table";
 import { ScrollArea } from "@v1/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@v1/ui/button";
 import { EyeIcon, PlusCircle } from "lucide-react";
 import { Badge } from "@v1/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@v1/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@v1/ui/card";
 import { CasesRefreshButton } from "@/components/cases/cases-refresh-button";
 
 export async function CasesServer() {
@@ -16,7 +30,6 @@ export async function CasesServer() {
   return (
     <Card>
       <CardHeader>
-
         <div className="flex justify-between items-center">
           <CardTitle>Patient Cases</CardTitle>
           <CasesRefreshButton />
@@ -25,15 +38,12 @@ export async function CasesServer() {
         <CardDescription>
           Manage patient cases and view case details.
         </CardDescription>
-
       </CardHeader>
       <CardContent>
-
         <div className="flex justify-between items-center mb-4">
           <div className="text-sm text-muted-foreground">
             Showing <strong>{data?.length || 0}</strong> cases
           </div>
-
         </div>
         <ScrollArea className="h-[calc(100vh-300px)]">
           <Table>

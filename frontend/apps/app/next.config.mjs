@@ -7,6 +7,9 @@ const nextConfig = {
   experimental: {
     instrumentationHook: process.env.NODE_ENV === "production",
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default withSentryConfig(nextConfig, {

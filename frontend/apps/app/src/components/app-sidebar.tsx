@@ -10,7 +10,7 @@ import {
   PieChart,
   Send,
   BriefcaseMedical,
-  SquareTerminal
+  SquareTerminal,
 } from "lucide-react";
 
 import { NavUser } from "@/components/app-sidebar-nav-user";
@@ -36,7 +36,7 @@ const data = {
       name: "Genomics Lab 🧪",
       logo: Atom,
       plan: "Enterprise",
-    }
+    },
   ],
   user: {
     name: "shadcn",
@@ -55,7 +55,7 @@ const data = {
           url: "/cases",
           icon: History,
           description: "View your cases",
-        }
+        },
       ],
     },
   ],
@@ -127,7 +127,7 @@ export function AppSidebar({
   }, []);
 
   console.log(cases);
-  console.log("____")
+  console.log("____");
   return (
     <Sidebar>
       <SidebarHeader>

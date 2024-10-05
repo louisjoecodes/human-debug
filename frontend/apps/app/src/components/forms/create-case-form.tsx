@@ -31,12 +31,12 @@ export function CreateCaseForm() {
     },
   });
   const createCase = useAction(createCaseAction, {
-    onExecute: () => { },
+    onExecute: () => {},
     onSuccess: () => {
       toast.success("Case created 🧠");
       form.reset({ first_name: "", last_name: "", date_of_birth: "" });
     },
-    onError: () => { },
+    onError: () => {},
   });
 
   return (
@@ -51,11 +51,7 @@ export function CreateCaseForm() {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input
-                  placeholder="First name"
-                  {...field}
-
-                />
+                <Input placeholder="First name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -67,11 +63,7 @@ export function CreateCaseForm() {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input
-                  placeholder="Last name"
-                  {...field}
-
-                />
+                <Input placeholder="Last name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -85,7 +77,9 @@ export function CreateCaseForm() {
               <FormControl>
                 <DatePickerDemo
                   date={field.value ? new Date(field.value) : undefined}
-                  onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                  onSelect={(date) =>
+                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                  }
                 />
               </FormControl>
               <FormMessage />

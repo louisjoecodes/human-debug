@@ -7,7 +7,7 @@ export async function myTask() {
   try {
     const handle = await tasks.trigger<typeof helloWorldTask>(
       "hello-world",
-      "James"
+      "James",
     );
 
     return { handle };

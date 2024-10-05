@@ -23,5 +23,5 @@ export const createCaseAction = authActionClient
       });
       revalidateTag("cases");
       return data;
-    }
+    },
   );

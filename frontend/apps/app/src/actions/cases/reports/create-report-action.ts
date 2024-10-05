@@ -28,7 +28,7 @@ export const createReportAction = authActionClient
 
       if (createError) {
         throw new Error(
-          `Failed to create report entry: ${createError.message}`
+          `Failed to create report entry: ${createError.message}`,
         );
       }
 
