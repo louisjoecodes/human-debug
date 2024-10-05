@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@v1/ui/tabs";
 import { ChevronRight, Stethoscope } from "lucide-react";
 import { PatientHistoryDropzone } from "@/components/patient-history-dropzone";
+import { createClient } from "@v1/supabase/server";
 
 export default async function Page({ params }: { params: { id: string } }) {
     const { data } = await getCaseById(params.id);
@@ -14,6 +15,19 @@ export default async function Page({ params }: { params: { id: string } }) {
     }
 
     const { first_name, last_name, date_of_birth, id } = data;
+
+    // Create Supabase client
+    const supabase = createClient();
+
+    // Fetch reports from the storage bucket
+    const { data: reports, error } = await supabase
+        .storage
+        .from('reports')
+        .list(`${id}/`);
+
+    if (error) {
+        console.error('Error fetching reports:', error);
+    }
 
     return (
         <>
@@ -45,46 +59,34 @@ export default async function Page({ params }: { params: { id: string } }) {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Doctor</TableHead>
+                                        <TableHead>Created</TableHead>
+                                        <TableHead>ID</TableHead>
                                         <TableHead>Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow>
-                                        <TableCell>05/15/2023</TableCell>
-                                        <TableCell>Annual physical examination</TableCell>
-                                        <TableCell>Dr. Sarah Johnson</TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" size="sm">
-                                                View Details
-                                                <ChevronRight className="ml-2 h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell>03/22/2023</TableCell>
-                                        <TableCell>Flu vaccination</TableCell>
-                                        <TableCell>Dr. Michael Lee</TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" size="sm">
-                                                View Details
-                                                <ChevronRight className="ml-2 h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell>01/10/2023</TableCell>
-                                        <TableCell>Sprained ankle treatment</TableCell>
-                                        <TableCell>Dr. Emily Chen</TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" size="sm">
-                                                View Details
-                                                <ChevronRight className="ml-2 h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
+                                    {reports && reports.length > 0 ? (
+                                        reports.map((report) => (
+                                            <TableRow key={report.name}>
+                                                <TableCell>{new Date(report.created_at).toLocaleDateString()}</TableCell>
+                                                <TableCell>{report.name}</TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+
+                                                    >
+                                                        View Report
+                                                        <ChevronRight className="ml-2 h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center">No reports found</TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>

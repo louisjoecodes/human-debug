@@ -59,3 +59,32 @@ export async function createCase(caseInsert: TablesInsert<"cases">) {
     return { message: "Error creating knowledge and embeddings", error };
   }
 }
+
+export const uploadReport = async (file: File) => {
+  const fileName = `${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage
+    .from("reports")
+    .upload(fileName, file);
+
+  return { path: data?.path, error };
+};
+
+export const createReport = async ({
+  case_id,
+  file_path,
+  created_by,
+}: {
+  case_id: string;
+  file_path: string;
+  created_by: string;
+}) => {
+  return await supabase
+    .from("reports")
+    .insert({
+      case_id,
+      file_path,
+      created_by,
+    })
+    .select()
+    .single();
+};

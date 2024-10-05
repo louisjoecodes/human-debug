@@ -10,6 +10,10 @@ export const createCaseSchema = z.object({
   last_name: z.string().min(1),
   date_of_birth: z.string().min(1),
 });
+export const createReportSchema = z.object({
+  caseId: z.string(),
+  report: z.string(),
+});
 
 export const deleteCaseSchema = z.object({
   id: z.string(),
