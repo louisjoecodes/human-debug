@@ -5,9 +5,10 @@ import { useDropzone } from 'react-dropzone';
 import { FiUpload } from 'react-icons/fi';
 
 
-export const PatientHistoryDropzone: React.FC = () => {
+export const PatientHistoryDropzone = ({ caseId }: { caseId: string }) => {
     const onDrop = useCallback((acceptedFiles: File[]) => {
         console.log('accepted files', acceptedFiles);
+        console.log('caseId', caseId);
     }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({

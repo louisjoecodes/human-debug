@@ -13,7 +13,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         return <div>Case not found</div>;
     }
 
-    const { first_name, last_name, date_of_birth } = data;
+    const { first_name, last_name, date_of_birth, id } = data;
 
     return (
         <>
@@ -34,7 +34,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                             <CardTitle>Upload Patient History</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <PatientHistoryDropzone />
+                            <PatientHistoryDropzone caseId={id} />
                         </CardContent>
                     </Card>
                     <Card className="md:col-span-2">
