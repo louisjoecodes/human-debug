@@ -1,8 +1,8 @@
 [build]
 builder = "nixpacks"
 buildCommand = """
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  export PATH="/root/.cargo/bin:$PATH"
+  curl -LsSf https://astral.sh/uv/install.sh | sh && \
+  export PATH="/root/.cargo/bin:$PATH" && \
   uv pip install .
 """
 
