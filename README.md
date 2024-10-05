@@ -4,6 +4,7 @@
 
 ```bash
 cd backend
+poetry install
 poetry run start
 ```
 
