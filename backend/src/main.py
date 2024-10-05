@@ -41,11 +41,11 @@ class Phenotype(BaseModel):
     id: str = Field(..., description="The identifier for the phenotype")
     name: str = Field(..., description="The name of the phenotype")
     definition: str | None = Field(None, description="The definition of the phenotype")
-    # comment: str | None = Field(None, description="Additional comments about the phenotype")
-    # descendant_count: int = Field(..., description="The number of descendants for this phenotype")
-    # synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
-    # xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
-    # translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
+    comment: str | None = Field(None, description="Additional comments about the phenotype")
+    descendant_count: int = Field(..., description="The number of descendants for this phenotype")
+    synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
+    xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
+    translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
 
 class Disease(BaseModel):
     id: str = Field(..., description="The identifier for the disease")
@@ -57,6 +57,17 @@ class Disease(BaseModel):
 class Gene(BaseModel):
     id: str = Field(..., description="The identifier for the gene, e.g., 'NCBIGene:4340'")
     name: str = Field(..., description="The name of the gene, e.g., 'MOG'")
+
+
+class Variant(BaseModel):
+    chromosome: str = Field(..., description="Chromosome where the variant is located")
+    position: int = Field(..., description="Position of the variant on the chromosome")
+    reference: str = Field(..., description="Reference allele")
+    alternate: str = Field(..., description="Alternate allele")
+    gene: str = Field(..., description="Gene affected by the variant")
+    consequence: str = Field(..., description="Predicted consequence of the variant")
+    significance: str = Field(..., description="Clinical significance of the variant")
+
 
 
 # Allow all CORS origins (for demo purposes only)
@@ -262,16 +273,6 @@ def start():
 
 if __name__ == "__main__":
     start()
-
-# Add this new model for variants
-class Variant(BaseModel):
-    chromosome: str = Field(..., description="Chromosome where the variant is located")
-    position: int = Field(..., description="Position of the variant on the chromosome")
-    reference: str = Field(..., description="Reference allele")
-    alternate: str = Field(..., description="Alternate allele")
-    gene: str = Field(..., description="Gene affected by the variant")
-    consequence: str = Field(..., description="Predicted consequence of the variant")
-    significance: str = Field(..., description="Clinical significance of the variant")
 
 @app.get("/variants")
 async def get_variants() -> List[Variant]:
