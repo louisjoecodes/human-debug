@@ -4,14 +4,17 @@ from mistralai import Mistral
 import instructor
 import base64
 import pprint
+import io
+from pdf2image import convert_from_bytes
 from typing import Literal
 from urllib.parse import quote
 
+from PIL import Image
 from dotenv import load_dotenv
 import uvicorn
 from typing import Dict, List, Any
 from pydantic import BaseModel, Field
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
@@ -38,11 +41,11 @@ class Phenotype(BaseModel):
     id: str = Field(..., description="The identifier for the phenotype")
     name: str = Field(..., description="The name of the phenotype")
     definition: str | None = Field(None, description="The definition of the phenotype")
-    comment: str | None = Field(None, description="Additional comments about the phenotype")
-    descendant_count: int = Field(..., description="The number of descendants for this phenotype")
-    synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
-    xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
-    translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
+    # comment: str | None = Field(None, description="Additional comments about the phenotype")
+    # descendant_count: int = Field(..., description="The number of descendants for this phenotype")
+    # synonyms: List[str] = Field(default_factory=list, description="Alternative names for the phenotype")
+    # xrefs: List[str] = Field(default_factory=list, description="Cross-references to other databases")
+    # translations: Any | None = Field(None, description="Translations of the phenotype name, if available")
 
 class Disease(BaseModel):
     id: str = Field(..., description="The identifier for the disease")
@@ -74,8 +77,8 @@ async def get_process_letter():
     return {"message": "Please use POST to upload a file"}
 
 @app.post("/process_letter")
-async def process_letter():
-    content = extract_letter_content()
+async def process_letter(file: UploadFile):
+    content = extract_letter_content(file)
     patient = extract_patient_info(content)
     phenotype_classes = fetch_phenotype_classes(patient.disease)
 
@@ -98,36 +101,59 @@ async def analyze():
     return annotations
 
 
-async def extract_letter_content(file=None):
+async def extract_letter_content(file: UploadFile):
+    content = await file.read()
+    images = []
 
-    image_path = "^data/doctor_letter_scan_0.jpg"
-    encoded_content = encode_image(image_path)
+    if file.content_type == "application/pdf":
+        # Convert PDF to images
+        pdf_images = convert_from_bytes(content, fmt='jpeg')
+        images = [img for img in pdf_images]
+    elif file.content_type in ["image/jpeg", "image/png"]:
+        # If it's already an image, just use it
+        image = Image.open(io.BytesIO(content))
+        images = [image]
+    else:
+        raise ValueError(f"Unsupported file type: {file.content_type}")
 
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "Please transcribe the content of this image or PDF."
-                },
-                {
-                    "type": "image_url",
-                    "image_url": f"data:image/jpeg;base64,{encoded_content}"
-                }
-            ]
-        }
-    ]
+
+    transcribed_contents = []
+
+
+
+    for img in images:
+        # Convert PIL Image to bytes
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='JPEG')
+        encoded_content = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Please transcribe the content of this image."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": f"data:image/jpeg;base64,{encoded_content}"
+                    }
+                ]
+            }
+        ]
+        
     
     chat_response = client.chat.complete(
         model="pixtral-12b-2409",
         messages=messages
     )
     
-    transcribed_content = chat_response.choices[0].message.content
-    print(transcribed_content)
+    # Combine all transcribed contents
+    full_transcription = "\n\n".join(transcribed_contents)
+    print(full_transcription)
     
-    return {"content": transcribed_content}
+    return {"content": full_transcription}
 
 def extract_patient_info(content):
 
@@ -145,7 +171,6 @@ def extract_patient_info(content):
     )
 
     return patient
-
 
 
 def encode_image(image_path):
@@ -187,6 +212,7 @@ def fetch_phenotype_classes(disease):
         print(f"Error fetching ontology terms: {e}")
         return []
     
+
 def fetch_annotation(phenotype_id: str="HP:0003002") -> Dict[str, List[Dict[str, Any]]]:
     """
     Fetch related diseases, genes, and medical actions for a given phenotype ID from the JAX ontology.
