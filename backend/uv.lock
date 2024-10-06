@@ -147,6 +147,7 @@ dependencies = [
     { name = "ruff" },
     { name = "sgkit" },
     { name = "uvicorn" },
+    { name = "vcfpy" },
     { name = "websockets" },
 ]
 
@@ -173,6 +174,7 @@ requires-dist = [
     { name = "ruff", specifier = ">=0.6.9" },
     { name = "sgkit", specifier = ">=0.9.0" },
     { name = "uvicorn", specifier = ">=0.30.6" },
+    { name = "vcfpy", specifier = ">=0.13.8" },
     { name = "websockets", specifier = ">=13.0.1" },
 ]
 
@@ -1876,6 +1878,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/0a/96/ee52d900f8e41cc35
 wheels = [
     { url = "https://files.pythonhosted.org/packages/05/12/206aca5442524d16be7702d08b453d7c274c86fd759266b1f709d4ef43ba/uvicorn-0.31.0-py3-none-any.whl", hash = "sha256:cac7be4dd4d891c363cd942160a7b02e69150dcbc7a36be04d5f4af4b17c8ced", size = 63656 },
 ]
+
+[[package]]
+name = "vcfpy"
+version = "0.13.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pysam" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e7/c1/314e8bac0b73b683ecbd23e565f3309173eef3e0f9b6d470ef60f5dfdfae/vcfpy-0.13.8.tar.gz", hash = "sha256:e7d00965105e7ca9567299f073ad60c6bbfc78d685d25ba33353988af9b33160", size = 993203 }
 
 [[package]]
 name = "wcwidth"

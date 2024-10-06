@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import uvicorn
 from typing import Dict, List, Any
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
@@ -66,8 +66,7 @@ class Variant(BaseModel):
     alternate: str = Field(..., description="Alternate allele")
     gene: str = Field(..., description="Gene affected by the variant")
     consequence: str = Field(..., description="Predicted consequence of the variant")
-    significance: str = Field(..., description="Clinical significance of the variant")
-
+    significance: Literal["Pathogenic", "Likely pathogenic", "Uncertain significance", "Likely benign", "Benign"] = Field(..., description="Clinical significance of the variant")
 
 
 # Allow all CORS origins (for demo purposes only)
@@ -181,7 +180,6 @@ async def extract_letter_content(file: UploadFile):
         transcribed_contents.append(chat_response.choices[0].message.content)
     
     full_transcription = "\n\n".join(transcribed_contents)
-    print
     return {"content": full_transcription}
 
 def extract_patient_info(content):
@@ -322,6 +320,49 @@ async def get_variants() -> List[Variant]:
     ]
     return mock_variants
 
+
+@app.post("/analyze_gene_sequence")
+async def analyze_gene_sequence(file: UploadFile):
+    """
+    Analyze an uploaded .fastq gene sequence file and return identified variants.
+    """
+    if not file.filename.endswith('.fastq'):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .fastq file.")
+
+    # TODO: Implement actual gene sequence analysis logic here
+    # For now, we'll return mocked data
+
+    mock_variants = [
+        Variant(
+            chromosome="1",
+            position=69897,
+            reference="A",
+            alternate="G",
+            gene="OR4F5",
+            consequence="missense_variant",
+            significance="Uncertain significance"
+        ),
+        Variant(
+            chromosome="7",
+            position=117199644,
+            reference="ATCT",
+            alternate="A",
+            gene="CFTR",
+            consequence="frameshift_variant",
+            significance="Pathogenic"
+        ),
+        Variant(
+            chromosome="17",
+            position=41197708,
+            reference="G",
+            alternate="A",
+            gene="BRCA1",
+            consequence="stop_gained",
+            significance="Likely pathogenic"
+        )
+    ]
+
+    return {"variants": [variant.model_dump() for variant in mock_variants]}
 
 def start():
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
