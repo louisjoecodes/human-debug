@@ -5,6 +5,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 import subprocess
 import sys
+import os
 
 def fetch_genomic_reference_sequence(chromosome, start=None, stop=None) -> Seq:
     with pysam.FastaFile("data/hg38.fa") as reference_genome:
@@ -12,9 +13,17 @@ def fetch_genomic_reference_sequence(chromosome, start=None, stop=None) -> Seq:
         stop = stop or reference_genome.get_reference_length(chromosome)
         return Seq(reference_genome.fetch(chromosome, start, stop))
 
-def create_fasta(sequence, filename, seq_id):
-    record = SeqRecord(sequence, id=seq_id, description="")
-    SeqIO.write(record, filename, "fasta")
+def create_fasta(sequence, filename, seq_id, read_length=150, overlap=75):
+    records = []
+    for i in range(0, len(sequence), read_length - overlap):
+        read = sequence[i:i+read_length]
+        if len(read) < read_length / 2:  # Skip very short reads at the end
+            break
+        record = SeqRecord(read, id=f"{seq_id}_{i}", description="")
+        record.annotations["chromosome"] = "chr17"  # Use a consistent chromosome name
+        records.append(record)
+    SeqIO.write(records, filename, "fasta")
+    print(f"Created FASTA file {filename} with {len(records)} reads")
 
     
 def create_mutated_sequence(sequence, mutation_position, deletion_length):
@@ -30,12 +39,28 @@ def align_sequence(reference_file, query_file, bam_file):
         # Perform alignment using BWA
         sam_file = bam_file.replace('.bam', '.sam')
         with open(sam_file, 'w') as sam_output:
-            subprocess.run(["bwa", "mem", reference_file, query_file], stdout=sam_output, check=True)
-        
+            subprocess.run([
+                "bwa", "mem",
+                "-A", "1",  # Match score
+                "-B", "2",  # Mismatch penalty
+                "-O", "3",  # Gap open penalty
+                "-E", "1",  # Gap extension penalty
+                "-L", "0",  # Clipping penalty
+                "-T", "10", # Minimum score to output
+                "-a",       # Output all alignments for SE or unpaired PE
+                reference_file, query_file
+            ], stdout=sam_output, check=True)
         # Convert SAM to BAM
         pysam.view("-b", "-o", bam_file, sam_file, catch_stdout=False)
         
-        # Index the BAM file
+        # Sort the BAM file
+        sorted_bam = bam_file.replace('.bam', '.sorted.bam')
+        pysam.sort("-o", sorted_bam, bam_file)
+        
+        # Replace the original BAM file with the sorted one
+        subprocess.run(["mv", sorted_bam, bam_file], check=True)
+        
+        # Index the sorted BAM file
         pysam.index(bam_file)
         
         # Clean up the intermediate SAM file
@@ -88,24 +113,30 @@ def index_reference(reference_file):
         print(f"Error indexing reference file: {reference_file}")
         raise
 
-def call_variants(reference_file, bam_file, output_vcf):
-    """Perform variant calling using FreeBayes."""
+def call_variants(input_bam, reference_file, output_vcf=None):
+    """Perform variant calling using FreeBayes on a BAM file with a reference genome."""
     try:
-        # Ensure the reference is indexed
-        index_reference(reference_file)
-        
+        # Generate output_vcf based on the input BAM file name if not provided
+        if output_vcf is None:
+            bam_basename = os.path.splitext(os.path.basename(input_bam))[0]
+            output_vcf = f"data/variants_{bam_basename}.vcf"
+
         # Run FreeBayes with less stringent parameters
         command = [
             "freebayes",
-            "-f", reference_file,
-            "-C", "1",  # Minimum alternate count (reduced from 5)
-            "--min-alternate-fraction", "0.01",  # Reduced from 0.05
-            "--min-base-quality", "10",
-            "--min-mapping-quality", "10",
-            "-b", bam_file,
+            "-f", reference_file,  # Add the reference file
+            "-C", "1",
+            "--min-alternate-fraction", "0.005",
+            "--min-base-quality", "5",
+            "--min-mapping-quality", "5",
+            "--min-coverage", "1",
+            "--min-alternate-count", "1",
+            "--haplotype-length", "0",
+            "--pooled-continuous",
+            "--use-best-n-alleles", "5",
+            "-b", input_bam,
             "-v", output_vcf
         ]
-        
         subprocess.run(command, check=True)
         print(f"Variant calling completed. VCF file created: {output_vcf}")
         
@@ -113,12 +144,16 @@ def call_variants(reference_file, bam_file, output_vcf):
         print(f"Error during variant calling: {e}")
         raise
 
-def filter_variants(input_vcf, output_filtered_vcf):
+def filter_variants(input_vcf, output_filtered_vcf=None):
     """Filter variants based on quality and depth."""
     try:
+        if output_filtered_vcf is None:
+            base_name = os.path.splitext(input_vcf)[0]
+            output_filtered_vcf = f"{base_name}_filtered.vcf"
+
         command = [
             "bcftools", "filter",
-            "-i", "QUAL>20 && DP>10",
+            "-i", "QUAL>20", # && DP>0
             "-o", output_filtered_vcf,
             "-O", "v",
             input_vcf
@@ -126,6 +161,8 @@ def filter_variants(input_vcf, output_filtered_vcf):
         
         subprocess.run(command, check=True)
         print(f"Variant filtering completed. Filtered VCF file created: {output_filtered_vcf}")
+        
+        return output_filtered_vcf
         
     except subprocess.CalledProcessError as e:
         print(f"Error during variant filtering: {e}")
@@ -183,48 +220,125 @@ def introduce_random_mutations(sequence, max_mutations=5):
     return Seq(''.join(mutated_sequence))
 
 
+
+def check_bam_file(bam_file):
+    with pysam.AlignmentFile(bam_file, "rb") as bam:
+        print(f"Checking BAM file: {bam_file}")
+        print(f"Number of mapped reads: {bam.mapped}")
+        print(f"Number of unmapped reads: {bam.unmapped}")
+        
+        mismatches = 0
+        total_reads = 0
+        for read in bam.fetch():
+            total_reads += 1
+            if read.has_tag("NM"):
+                mismatches += read.get_tag("NM")
+        print(f"Total reads in BAM: {total_reads}")
+        print(f"Total mismatches: {mismatches}")
+        if total_reads > 0:
+            print(f"Average mismatches per read: {mismatches / total_reads:.2f}")
+
+def check_vcf_file(vcf_file):
+    try:
+        with pysam.VariantFile(vcf_file) as vcf:
+            print(f"Checking VCF file: {vcf_file}")
+            variant_count = sum(1 for _ in vcf)
+            print(f"Number of variants: {variant_count}")
+            
+            if variant_count > 0:
+                vcf.reset()
+                print("First few variants:")
+                for i, record in enumerate(vcf):
+                    if i >= 5:
+                        break
+                    print(f"Pos: {record.pos}, Ref: {record.ref}, Alt: {record.alts}")
+            else:
+                print("No variants found in the VCF file.")
+    except Exception as e:
+        print(f"Error checking VCF file: {e}")
+
+def analyze_sam_file(sam_file):
+    with open(sam_file, 'r') as sam:
+        total_reads = 0
+        mapped_reads = 0
+        for line in sam:
+            if line.startswith('@'):  # Skip header lines
+                continue
+            total_reads += 1
+            fields = line.split('\t')
+            if int(fields[1]) & 0x4 == 0:  # Check if the read is mapped
+                mapped_reads += 1
+    print(f"SAM file analysis:")
+    print(f"Total reads: {total_reads}")
+    print(f"Mapped reads: {mapped_reads}")
+
+def generate_vcf_stats(input_vcf):
+    """
+    Generate statistics for a VCF file using bcftools stats.
+    
+    :param input_vcf: Path to the input VCF file
+    :return: Path to the generated statistics file
+    """
+    try:
+        # Generate the output stats filename
+        base_name = os.path.splitext(os.path.basename(input_vcf))[0]
+        base_name = base_name.replace("_filtered", "").replace("variants_", "")
+        stats_file = f"data/{base_name}_stats.txt"
+        
+        # Run bcftools stats
+        command = [
+            "bcftools", "stats",
+            input_vcf
+        ]
+        
+        with open(stats_file, 'w') as stats_output:
+            subprocess.run(command, stdout=stats_output, check=True)
+        
+        print(f"VCF statistics generated: {stats_file}")
+        return stats_file
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error generating VCF statistics: {e}")
+        raise
+
 if __name__ == "__main__":
 
-    reference_file = "data/reference_brca1.fa"
-    patient_file = "data/patient_brca1.fa"
-    bam_file = "data/aligned_brca1.bam"
-    output_vcf = "data/variants.vcf"
-    filtered_vcf = "data/filtered_variants.vcf"
+    # reference_file = "data/reference_brca1.fa"
+    # patient_file = "data/patient_brca1.fa"
+    # bam_file = "data/aligned_brca1.bam"
+    # output_vcf = "data/variants.vcf"
+    # filtered_vcf = "data/filtered_variants.vcf"
 
-    reference_sequence_brca1 = fetch_genomic_reference_sequence(chromosome="chr17", start=200000, stop=600000) #start=43044295, stop=43170245
-    create_fasta(reference_sequence_brca1, reference_file, "reference")
+    # reference_sequence_brca1 = fetch_genomic_reference_sequence(chromosome="chr17", start=200000, stop=600000) #start=43044295, stop=43170245
+    # create_fasta(reference_sequence_brca1, reference_file, "reference")
 
-    # print(reference_sequence_brca1)
+    # # print(reference_sequence_brca1)
 
-    # mutated_sequence_brca1 = create_mutated_sequence(reference_sequence_brca1, mutation_position=185, deletion_length=2)
-    noisy_mutated_sequence_brca1 = introduce_random_mutations(reference_sequence_brca1, max_mutations=1)
+    # # mutated_sequence_brca1 = create_mutated_sequence(reference_sequence_brca1, mutation_position=185, deletion_length=2)
+    # noisy_mutated_sequence_brca1 = introduce_random_mutations(reference_sequence_brca1, max_mutations=1)
 
-    print("Sequences are identical:", noisy_mutated_sequence_brca1 == reference_sequence_brca1)
-    if noisy_mutated_sequence_brca1 != reference_sequence_brca1:
-        print("Number of differences:", sum(1 for a, b in zip(str(noisy_mutated_sequence_brca1), str(reference_sequence_brca1)) if a != b))
-    create_fasta(noisy_mutated_sequence_brca1, patient_file, "patient")
+    # print("Sequences are identical:", noisy_mutated_sequence_brca1 == reference_sequence_brca1)
+    # if noisy_mutated_sequence_brca1 != reference_sequence_brca1:
+    #     print("Number of differences:", sum(1 for a, b in zip(str(noisy_mutated_sequence_brca1), str(reference_sequence_brca1)) if a != b))
+    # create_fasta(noisy_mutated_sequence_brca1, patient_file, "patient")
 
-    # print("--------------------------")
-    # print(noisy_mutated_sequence_brca1)
-    align_sequence(reference_file=reference_file, query_file=patient_file, bam_file=bam_file)
+    # # print("--------------------------")
+    # # print(noisy_mutated_sequence_brca1)
+    # align_sequence(reference_file=reference_file, query_file=patient_file, bam_file=bam_file)
 
+    # # Add this to your main function
+    # check_bam_file(bam_file)
+    # check_vcf_file(output_vcf)
 
-    def check_bam_file(bam_file):
-        with pysam.AlignmentFile(bam_file, "rb") as bam:
-            print(f"Checking BAM file: {bam_file}")
-            print(f"Number of mapped reads: {bam.mapped}")
-            print(f"Number of unmapped reads: {bam.unmapped}")
-            
-            mismatches = 0
-            for read in bam.fetch():
-                if read.has_tag("NM"):
-                    mismatches += read.get_tag("NM")
-        print(f"Total mismatches: {mismatches}")
+    # # New variant calling, filtering, and analysis workflow
+    # call_variants(reference_file, bam_file, output_vcf)
+    # # filter_variants(output_vcf, filtered_vcf)
+    # # analyze_variants(filtered_vcf)
+    # call_variants(input_bam="data/Run6_IonXpress_003.bam", reference_file="data/hg38.fa")
+    check_vcf_file("data/variants_Run6_IonXpress_003.vcf")
+    filter_variants("data/variants_Run6_IonXpress_003.vcf")
 
-    # Add this to your main function
-    check_bam_file(bam_file)
-
-    # New variant calling, filtering, and analysis workflow
-    call_variants(reference_file, bam_file, output_vcf)
-    # filter_variants(output_vcf, filtered_vcf)
-    # analyze_variants(filtered_vcf)
+    # Generate statistics for the filtered VCF file
+    filtered_vcf = "data/variants_Run6_IonXpress_003_filtered.vcf"
+    stats_file = generate_vcf_stats(filtered_vcf)
+    print(f"Statistics file created: {stats_file}")
