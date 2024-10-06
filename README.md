@@ -1,5 +1,6 @@
 
-![human_debug](https://github.com/user-attachments/assets/4db8eebb-0ecc-4b2d-9222-fa3192ea71a1)
+![Frame 27](https://github.com/user-attachments/assets/8a118387-3c94-4d28-a97e-acc088a6ad75)
+
 
 
 # Human Debug 🧬
