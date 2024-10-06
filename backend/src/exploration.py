@@ -6,8 +6,10 @@ from Bio import SeqIO
 import subprocess
 import sys
 
-def fetch_genomic_reference_sequence(chromosome, start, stop) -> Seq:
+def fetch_genomic_reference_sequence(chromosome, start=None, stop=None) -> Seq:
     with pysam.FastaFile("data/hg38.fa") as reference_genome:
+        start = start or 0
+        stop = stop or reference_genome.get_reference_length(chromosome)
         return Seq(reference_genome.fetch(chromosome, start, stop))
 
 def create_fasta(sequence, filename, seq_id):
@@ -92,14 +94,14 @@ def call_variants(reference_file, bam_file, output_vcf):
         # Ensure the reference is indexed
         index_reference(reference_file)
         
-        # Run FreeBayes
+        # Run FreeBayes with less stringent parameters
         command = [
             "freebayes",
             "-f", reference_file,
-            "-C", "5",  # Minimum alternate count
-            "--min-alternate-fraction", "0.05",
-            "--pooled-continuous",
-            "--report-genotype-likelihood-max",
+            "-C", "1",  # Minimum alternate count (reduced from 5)
+            "--min-alternate-fraction", "0.01",  # Reduced from 0.05
+            "--min-base-quality", "10",
+            "--min-mapping-quality", "10",
             "-b", bam_file,
             "-v", output_vcf
         ]
@@ -153,21 +155,76 @@ def analyze_variants(vcf_file):
         raise
 
 
+def introduce_random_mutations(sequence, max_mutations=5):
+    """
+    Introduce a limited number of random mutations (noise) into the given sequence.
+    
+    :param sequence: The input DNA sequence (Seq object)
+    :param max_mutations: The maximum number of mutations to introduce
+    :return: A new Seq object with random mutations
+    """
+    nucleotides = ['A', 'C', 'G', 'T', 'a', 'c', 'g', 't']
+    mutated_sequence = list(str(sequence))
+    sequence_length = len(mutated_sequence)
+    
+    for _ in range(max_mutations):
+        position = random.randint(0, sequence_length - 1)
+        mutation_type = random.choice(['add', 'delete', 'switch'])
+        
+        if mutation_type == 'add':
+            mutated_sequence.insert(position, random.choice(nucleotides))
+            sequence_length += 1
+        elif mutation_type == 'delete':
+            del mutated_sequence[position]
+            sequence_length -= 1
+        else:  # switch
+            mutated_sequence[position] = random.choice(nucleotides)
+    
+    return Seq(''.join(mutated_sequence))
+
+
 if __name__ == "__main__":
-    reference_sequence_brca1 = fetch_genomic_reference_sequence(chromosome="chr17", start=43044295, stop=43170245)
-    create_fasta(reference_sequence_brca1, "data/reference_brca1.fa", "reference")
 
-    mutated_sequence_brca1 = create_mutated_sequence(reference_sequence_brca1, mutation_position=185, deletion_length=2)
-    create_fasta(mutated_sequence_brca1, "data/patient_brca1.fa", "patient")
-
-    align_sequence("data/reference_brca1.fa", "data/patient_brca1.fa", "data/aligned_brca1.bam")
-
-    # New variant calling, filtering, and analysis workflow
     reference_file = "data/reference_brca1.fa"
+    patient_file = "data/patient_brca1.fa"
     bam_file = "data/aligned_brca1.bam"
     output_vcf = "data/variants.vcf"
     filtered_vcf = "data/filtered_variants.vcf"
 
+    reference_sequence_brca1 = fetch_genomic_reference_sequence(chromosome="chr17", start=200000, stop=600000) #start=43044295, stop=43170245
+    create_fasta(reference_sequence_brca1, reference_file, "reference")
+
+    # print(reference_sequence_brca1)
+
+    # mutated_sequence_brca1 = create_mutated_sequence(reference_sequence_brca1, mutation_position=185, deletion_length=2)
+    noisy_mutated_sequence_brca1 = introduce_random_mutations(reference_sequence_brca1, max_mutations=1)
+
+    print("Sequences are identical:", noisy_mutated_sequence_brca1 == reference_sequence_brca1)
+    if noisy_mutated_sequence_brca1 != reference_sequence_brca1:
+        print("Number of differences:", sum(1 for a, b in zip(str(noisy_mutated_sequence_brca1), str(reference_sequence_brca1)) if a != b))
+    create_fasta(noisy_mutated_sequence_brca1, patient_file, "patient")
+
+    # print("--------------------------")
+    # print(noisy_mutated_sequence_brca1)
+    align_sequence(reference_file=reference_file, query_file=patient_file, bam_file=bam_file)
+
+
+    def check_bam_file(bam_file):
+        with pysam.AlignmentFile(bam_file, "rb") as bam:
+            print(f"Checking BAM file: {bam_file}")
+            print(f"Number of mapped reads: {bam.mapped}")
+            print(f"Number of unmapped reads: {bam.unmapped}")
+            
+            mismatches = 0
+            for read in bam.fetch():
+                if read.has_tag("NM"):
+                    mismatches += read.get_tag("NM")
+        print(f"Total mismatches: {mismatches}")
+
+    # Add this to your main function
+    check_bam_file(bam_file)
+
+    # New variant calling, filtering, and analysis workflow
     call_variants(reference_file, bam_file, output_vcf)
-    filter_variants(output_vcf, filtered_vcf)
-    analyze_variants(filtered_vcf)
+    # filter_variants(output_vcf, filtered_vcf)
+    # analyze_variants(filtered_vcf)
