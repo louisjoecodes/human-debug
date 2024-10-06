@@ -1,10 +1,56 @@
 import pysam
 import random
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
+import subprocess
+import sys
 
-def fetch_sequence_info(chromosome, start, stop):
+def fetch_genomic_reference_sequence(chromosome, start, stop) -> Seq:
     with pysam.FastaFile("data/hg38.fa") as reference_genome:
-        return reference_genome.fetch(chromosome, start, stop)
+        return Seq(reference_genome.fetch(chromosome, start, stop))
+
+def create_fasta(sequence, filename, seq_id):
+    record = SeqRecord(sequence, id=seq_id, description="")
+    SeqIO.write(record, filename, "fasta")
+
+    
+def create_mutated_sequence(sequence, mutation_position, deletion_length):
+    return sequence[:mutation_position] + sequence[mutation_position + deletion_length:]
+
+def align_sequence(reference_file, query_file, bam_file):
+    """Align sequence from query file to reference and create a BAM file using BWA."""
+    
+    try:
+        # Index the reference file (if not already indexed)
+        subprocess.run(["bwa", "index", reference_file], check=True)
+        
+        # Perform alignment using BWA
+        sam_file = bam_file.replace('.bam', '.sam')
+        with open(sam_file, 'w') as sam_output:
+            subprocess.run(["bwa", "mem", reference_file, query_file], stdout=sam_output, check=True)
+        
+        # Convert SAM to BAM
+        pysam.view("-b", "-o", bam_file, sam_file, catch_stdout=False)
+        
+        # Index the BAM file
+        pysam.index(bam_file)
+        
+        # Clean up the intermediate SAM file
+        subprocess.run(["rm", sam_file], check=True)
+
+        print(f"Alignment completed. BAM file created: {bam_file}")
+    
+    except FileNotFoundError:
+        print("Error: BWA not found. Please install BWA and ensure it's in your system PATH.")
+        print("Installation instructions:")
+        print("  - macOS (using Homebrew): brew install bwa")
+        print("  - Ubuntu/Debian: sudo apt-get install bwa")
+        print("  - From source: Visit http://bio-bwa.sourceforge.net/ for instructions")
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during alignment process: {e}")
+        sys.exit(1)
 
 def analyze_vcf_file():
     with pysam.VariantFile("data/clinvar.vcf.gz") as vcf:
@@ -32,85 +78,96 @@ def analyze_vcf_file():
 
     return chrom_counts
 
-def generate_cancerous_genome(original_sequence, mutation_type, mutation_position=185):
-    """
-    Generate a simulated cancerous genome with a specified mutation.
-    
-    :param original_sequence: The reference BRCA1 sequence (full genome)
-    :param mutation_type: The type of mutation to inject (e.g., '185delAG', 'SNP', 'insertion')
-    :param mutation_position: The position of the mutation (default is 185)
-    :return: The full mutated sequence and the annotation
-    """
-    # Ensure the mutation position is within the sequence
-    if mutation_position >= len(original_sequence):
-        raise ValueError("Mutation position is outside the sequence range")
-    
-    mutated_sequence = list(original_sequence)  # Convert to list for easy manipulation
-    annotation = ""
+def index_reference(reference_file):
+    """Index the reference genome if it's not already indexed."""
+    try:
+        subprocess.run(["samtools", "faidx", reference_file], check=True)
+    except subprocess.CalledProcessError:
+        print(f"Error indexing reference file: {reference_file}")
+        raise
 
-    if mutation_type == '185delAG':
-        # Create the mutated sequence with 185delAG mutation
-        del mutated_sequence[mutation_position:mutation_position+2]
-        annotation = f"{mutation_position}delAG Mutation"
-    
-    elif mutation_type == 'SNP':
-        # Single Nucleotide Polymorphism
-        bases = ['A', 'T', 'C', 'G']
-        original_base = mutated_sequence[mutation_position]
-        new_base = original_base
-        while new_base == original_base:
-            new_base = random.choice(bases)
+def call_variants(reference_file, bam_file, output_vcf):
+    """Perform variant calling using FreeBayes."""
+    try:
+        # Ensure the reference is indexed
+        index_reference(reference_file)
         
-        mutated_sequence[mutation_position] = new_base
-        annotation = f"SNP at position {mutation_position}: {original_base}>{new_base}"
-    
-    elif mutation_type == 'insertion':
-        # Small insertion (e.g., 1-3 bases)
-        insertion = ''.join(random.choices(['A', 'T', 'C', 'G'], k=random.randint(1, 3)))
-        mutated_sequence[mutation_position:mutation_position] = list(insertion)
-        annotation = f"Insertion at position {mutation_position}: {insertion}"
-    
-    else:
-        raise ValueError("Unsupported mutation type")
+        # Run FreeBayes
+        command = [
+            "freebayes",
+            "-f", reference_file,
+            "-C", "5",  # Minimum alternate count
+            "--min-alternate-fraction", "0.05",
+            "--pooled-continuous",
+            "--report-genotype-likelihood-max",
+            "-b", bam_file,
+            "-v", output_vcf
+        ]
+        
+        subprocess.run(command, check=True)
+        print(f"Variant calling completed. VCF file created: {output_vcf}")
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error during variant calling: {e}")
+        raise
 
-    return ''.join(mutated_sequence), annotation
+def filter_variants(input_vcf, output_filtered_vcf):
+    """Filter variants based on quality and depth."""
+    try:
+        command = [
+            "bcftools", "filter",
+            "-i", "QUAL>20 && DP>10",
+            "-o", output_filtered_vcf,
+            "-O", "v",
+            input_vcf
+        ]
+        
+        subprocess.run(command, check=True)
+        print(f"Variant filtering completed. Filtered VCF file created: {output_filtered_vcf}")
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error during variant filtering: {e}")
+        raise
+
+def analyze_variants(vcf_file):
+    """Basic analysis of the variants in the VCF file."""
+    try:
+        with pysam.VariantFile(vcf_file) as vcf:
+            variant_count = 0
+            snp_count = 0
+            indel_count = 0
+            
+            for record in vcf:
+                variant_count += 1
+                if len(record.ref) == 1 and len(record.alts[0]) == 1:
+                    snp_count += 1
+                else:
+                    indel_count += 1
+            
+            print(f"Total variants: {variant_count}")
+            print(f"SNPs: {snp_count}")
+            print(f"Indels: {indel_count}")
+    
+    except Exception as e:
+        print(f"Error during variant analysis: {e}")
+        raise
+
 
 if __name__ == "__main__":
-    # sub_sequence = fetch_sequence_info(chromosome="chr17", start=43044295, stop=43170245)
-    # sub_sequence = fetch_sequence_info(chromosome="chr17", start=43044295, stop=43170245)
+    reference_sequence_brca1 = fetch_genomic_reference_sequence(chromosome="chr17", start=43044295, stop=43170245)
+    create_fasta(reference_sequence_brca1, "data/reference_brca1.fa", "reference")
 
+    mutated_sequence_brca1 = create_mutated_sequence(reference_sequence_brca1, mutation_position=185, deletion_length=2)
+    create_fasta(mutated_sequence_brca1, "data/patient_brca1.fa", "patient")
 
-    reference_genome = Seq(pysam.FastaFile("data/hg38.fa").fetch("chr17", 43044295, 43170245))
-    reference_genome2 = Seq(pysam.FastaFile("data/hg38.fa").fetch("chr17", 43044295, 43170245))
+    align_sequence("data/reference_brca1.fa", "data/patient_brca1.fa", "data/aligned_brca1.bam")
 
-    compare_and_annotate(reference_genome, reference_genome2)
-    
-    # mutations = [
-    #     ('185delAG', 185),
-    #     # ('SNP', 1000),
-    #     # ('insertion', 5000)
-    # ]
-    
-    # for mutation_type, position in mutations:
-    #     cancerous_sequence, annotation = generate_cancerous_genome(sub_sequence, mutation_type, position)
-        
-    #     print(f"\nMutation: {mutation_type}")
-    #     print(f"Length of cancerous sequence: {len(cancerous_sequence)}")
-    #     print("Annotation:", annotation)
-        
-    #     # Compare and annotate
-    #     variants = compare_and_annotate(sub_sequence, cancerous_sequence)
-        
-    #     print("\nDetected Variants:")
-    #     for variant in variants:
-    #         print(f"Position: {variant['position']}")
-    #         print(f"Reference: {variant['reference']}")
-    #         print(f"Patient: {variant['patient']}")
-    #         print(f"Annotation: {variant['annotation']}")
-    #         print("---")
+    # New variant calling, filtering, and analysis workflow
+    reference_file = "data/reference_brca1.fa"
+    bam_file = "data/aligned_brca1.bam"
+    output_vcf = "data/variants.vcf"
+    filtered_vcf = "data/filtered_variants.vcf"
 
-    # # Analyze VCF file
-    analyze_vcf_file()
-
-    reference_genome.close()
-    reference_genome2.close()
+    call_variants(reference_file, bam_file, output_vcf)
+    filter_variants(output_vcf, filtered_vcf)
+    analyze_variants(filtered_vcf)
