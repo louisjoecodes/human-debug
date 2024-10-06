@@ -12,6 +12,7 @@
    brew install freebayes
    brew install bwa
    brew install samtools
+   brew install bcftools
    ```
 
 3. Create a virtual environment and install dependencies:
