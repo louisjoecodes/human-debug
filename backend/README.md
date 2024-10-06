@@ -7,14 +7,21 @@
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. Create a virtual environment and install dependencies:
+2. Install required system dependencies (for macOS users):
+   ```
+   brew install freebayes
+   brew install bwa
+   brew install samtools
+   ```
+
+3. Create a virtual environment and install dependencies:
    ```
    cd backend
    uv venv
    source .venv/bin/activate  # On Unix-like systems
    ```
 
-3. Start the development server:
+4. Start the development server:
    ```
    uv run src.main:start
    ```
