@@ -181,14 +181,12 @@ async def extract_letter_content(file: UploadFile):
         transcribed_contents.append(chat_response.choices[0].message.content)
     
     full_transcription = "\n\n".join(transcribed_contents)
+    print
     return {"content": full_transcription}
 
 def extract_patient_info(content):
 
     client = instructor.from_mistral(Mistral(api_key=os.getenv("MISTRAL_API_KEY")))
-
-    with open("data/doctor_letter.txt", "r") as file:
-        content = file.read()
 
     patient = client.chat.completions.create(
         model="pixtral-12b-2409",

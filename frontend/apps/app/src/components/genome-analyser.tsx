@@ -7,6 +7,7 @@ import {
 import { Card, CardHeader, CardContent, CardTitle } from "@v1/ui/card";
 import { ScrollArea } from "@v1/ui/scroll-area";
 import { Badge } from "@v1/ui/badge";
+import { Heatmap } from "@/components/heatmap";
 import {
   Tooltip,
   TooltipContent,
@@ -240,7 +241,7 @@ export const GenomeAnalyser: React.FC = () => {
           <JBrowseLinearGenomeView viewState={viewState} />
         </CardContent>
       </Card>
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>Identified Variants</CardTitle>
         </CardHeader>
@@ -262,6 +263,12 @@ export const GenomeAnalyser: React.FC = () => {
             )}
           </ScrollArea>
         </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Genotype vs. Phenotype</CardTitle>
+          <CardContent><Heatmap /></CardContent>
+        </CardHeader>
       </Card>
     </div>
   );

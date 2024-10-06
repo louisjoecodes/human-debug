@@ -13,6 +13,7 @@ import {
 import { env } from "@/env.mjs";
 import dynamic from 'next/dynamic';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@v1/ui/tabs";
+import { Heatmap } from "./heatmap";
 
 const EditorJS = dynamic(() => import('./EditorJS'), { ssr: false });
 
@@ -122,7 +123,7 @@ export function AnalysisViewer({ caseId }: { caseId: string }) {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-204px)]"> {/* Adjust 64px if your header height is different */}
+        <div className="flex flex-col h-[calc(100vh-24px)]"> {/* Adjust 64px if your header height is different */}
             <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-3 h-full overflow-hidden">
                 <Card className="lg:col-span-2 xl:col-span-2 flex flex-col h-full">
                     <CardHeader className="bg-muted/50">
@@ -158,7 +159,16 @@ export function AnalysisViewer({ caseId }: { caseId: string }) {
                         </Tabs>
                     </CardContent>
                 </Card>
+                <Card className="flex flex-col col-span-3 h-full">
+                    <CardHeader>Phenotype vs. Genotype Correlation</CardHeader>
+                    <CardContent>
+                        <Heatmap />
+                    </CardContent>
+                </Card>
+
             </div>
+
+
         </div>
     );
 }
