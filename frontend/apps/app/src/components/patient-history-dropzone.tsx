@@ -18,6 +18,7 @@ import {
 import { Button } from "@v1/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@v1/ui/card";
 import { ScrollArea } from "@v1/ui/scroll-area";
+import { env } from "@/env.mjs";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -59,7 +60,7 @@ export const PatientHistoryDropzone = ({ caseId }: { caseId: string }) => {
         formData.append("file", file);
 
         const response = await axios.post(
-          "http://localhost:8000/process_letter",
+          `${env.NEXT_PUBLIC_HUMAN_DEBUG_BACKEND_API_URL}/process_letter`,
           formData,
           {
             headers: {
@@ -130,11 +131,10 @@ export const PatientHistoryDropzone = ({ caseId }: { caseId: string }) => {
     <div>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 hover:border-gray-400"
-        }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive
+          ? "border-blue-500 bg-blue-50"
+          : "border-gray-300 hover:border-gray-400"
+          }`}
       >
         <input {...getInputProps()} />
         <FiUpload className="mx-auto text-4xl text-gray-400 mb-4" />

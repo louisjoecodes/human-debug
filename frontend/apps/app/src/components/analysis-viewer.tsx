@@ -11,6 +11,7 @@ import {
     CardTitle,
 } from "@v1/ui/card";
 import { Heatmap } from "@/components/heatmap";
+import { env } from "@/env.mjs";
 
 export function AnalysisViewer({ caseId }: { caseId: string }) {
     const [patientData, setPatientData] = useState<any>(null);
@@ -20,7 +21,7 @@ export function AnalysisViewer({ caseId }: { caseId: string }) {
     useEffect(() => {
         const fetchVariants = async () => {
             try {
-                const response = await fetch("http://localhost:8000/variants");
+                const response = await fetch(`${env.NEXT_PUBLIC_HUMAN_DEBUG_BACKEND_API_URL}/variants`);
                 const data = await response.json();
                 setVariants(data);
             } catch (error) {

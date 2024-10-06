@@ -21,6 +21,7 @@ export const env = createEnv({
     NEXT_PUBLIC_OPENPANEL_CLIENT_ID: z.string(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
     NEXT_PUBLIC_SUPABASE_URL: z.string(),
+    NEXT_PUBLIC_HUMAN_DEBUG_BACKEND_API_URL: z.string(),
   },
   runtimeEnv: {
     NEXT_PUBLIC_OPENPANEL_CLIENT_ID:
@@ -36,6 +37,7 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     VERCEL_URL: process.env.VERCEL_URL,
     ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
+    NEXT_PUBLIC_HUMAN_DEBUG_BACKEND_API_URL: process.env.NEXT_PUBLIC_HUMAN_DEBUG_BACKEND_API_URL,
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,
 });
