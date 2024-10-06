@@ -16,6 +16,7 @@ import {
 } from "@v1/ui/tooltip";
 import { env } from "@/env.mjs";
 import { Button } from "@v1/ui/button";
+import { GenomeDropzone } from "./genome-dropzone";
 
 interface Variant {
   chromosome: string;
@@ -42,6 +43,7 @@ const consequenceIcons: { [key: string]: string } = {
 };
 
 const VariantCard: React.FC<{ variant: Variant; onView: (search: string) => void }> = ({ variant, onView }) => {
+
   const handleView = () => {
     const search = `${variant.chromosome}:${variant.position}`;
     onView(search);
@@ -83,6 +85,7 @@ const VariantCard: React.FC<{ variant: Variant; onView: (search: string) => void
 
 export const GenomeAnalyser: React.FC = () => {
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [processingComplete, setProcessingComplete] = useState(false);
 
   useEffect(() => {
     const fetchVariants = async () => {
@@ -233,43 +236,50 @@ export const GenomeAnalyser: React.FC = () => {
 
   return (
     <div className="p-4">
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Genome Browser</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <JBrowseLinearGenomeView viewState={viewState} />
-        </CardContent>
-      </Card>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Identified Variants</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[700px] w-full">
-            {orderedCategories.map(
-              (category) =>
-                groupedVariants[category] &&
-                groupedVariants[category].length > 0 && (
-                  <div key={category} className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">{category}</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {groupedVariants[category].map((variant, index) => (
-                        <VariantCard key={index} variant={variant} onView={handleViewVariant} />
-                      ))}
-                    </div>
-                  </div>
-                ),
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Genotype vs. Phenotype</CardTitle>
-          <CardContent><Heatmap /></CardContent>
-        </CardHeader>
-      </Card>
+      {!processingComplete && (
+        <GenomeDropzone setProcessingComplete={() => { setProcessingComplete(true) }} />
+      )}
+      {processingComplete && (
+        <>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Genome Browser</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <JBrowseLinearGenomeView viewState={viewState} />
+            </CardContent>
+          </Card>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Identified Variants</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[700px] w-full">
+                {orderedCategories.map(
+                  (category) =>
+                    groupedVariants[category] &&
+                    groupedVariants[category].length > 0 && (
+                      <div key={category} className="mb-6">
+                        <h3 className="text-lg font-semibold mb-3">{category}</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {groupedVariants[category].map((variant, index) => (
+                            <VariantCard key={index} variant={variant} onView={handleViewVariant} />
+                          ))}
+                        </div>
+                      </div>
+                    ),
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Genotype vs. Phenotype</CardTitle>
+              <CardContent><Heatmap /></CardContent>
+            </CardHeader>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

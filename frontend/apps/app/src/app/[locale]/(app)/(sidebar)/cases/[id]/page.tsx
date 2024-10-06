@@ -50,8 +50,8 @@ export default async function Page({ params }: { params: { id: string } }) {
             <Tabs defaultValue="overview">
                 <TabsList className="mb-6">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="phenotype">Phenotype Data 🧬</TabsTrigger>
-                    <TabsTrigger value="sequencing">Genome Sequence ⛓️‍💥 </TabsTrigger>
+                    <TabsTrigger value="phenotype">Phenotype 🧬</TabsTrigger>
+                    <TabsTrigger value="sequencing">Genotype ⛓️‍💥 </TabsTrigger>
                     <TabsTrigger value="analysis">Report 🧪</TabsTrigger>
                     {/* <TabsTrigger value="appointments">Appointments</TabsTrigger>
                     <TabsTrigger value="medications">Medications</TabsTrigger>

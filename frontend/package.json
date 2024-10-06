@@ -30,6 +30,7 @@
     "ag-charts-react": "^10.2.0",
     "axios": "^1.7.7",
     "react-dropzone": "^14.2.9",
-    "react-heatmap-grid": "^0.9.1"
+    "react-heatmap-grid": "^0.9.1",
+    "react-markdown": "^9.0.1"
   }
 }

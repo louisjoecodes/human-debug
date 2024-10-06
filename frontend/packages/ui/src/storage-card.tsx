@@ -11,10 +11,10 @@ export function StorageCard() {
           <Database className="h-5 w-5 text-muted-foreground" />
         </div>
         <div className="grid flex-1 gap-1">
-          <p className="font-medium">Running out of space?</p>
-          <p className="text-muted-foreground">79.2 GB / 100 GB used</p>
+          <p className="font-medium">Running out of AI credits?</p>
+          <p className="text-muted-foreground">79.2K tokens / 11M used</p>
           <Progress
-            value={79.2}
+            value={7.2}
             className="mt-1"
             aria-label="79.2 GB / 100 GB used"
           />
