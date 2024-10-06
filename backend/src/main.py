@@ -14,10 +14,9 @@ from dotenv import load_dotenv
 import uvicorn
 from typing import Dict, List, Any
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-import pysam
 import subprocess
 import vcfpy
 
@@ -331,17 +330,17 @@ async def get_variants() -> List[Variant]:
     ]
     return mock_variants
 
-
 @app.post("/analyze_gene_sequence")
-async def analyze_gene_sequence(file: UploadFile):
-    """Analyze an uploaded .fastq gene sequence file and return identified variants."""
-    if not file.filename.endswith('.fastq'):
-        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .fastq file.")
+async def analyze_gene_sequence(upload_file: UploadFile):
+    """Analyze the predefined .fastq gene sequence file and return identified variants."""
 
-    bam_file = align_sequence(query_file=file.file, reference_file="data/hg38.fa")
+    # query_file = "data/Run2_IonXpress_008.fastq"
+    reference_file = "data/hg38.fa"
+    
+    bam_file = align_sequence(query_file=upload_file, reference_file=reference_file)
     print(f"BAM file created: {bam_file}")
 
-    vcf_file = call_variants(input_bam=bam_file, reference_file="data/hg38.fa")
+    vcf_file = call_variants(input_bam=bam_file, reference_file=reference_file)
     print(f"VCF file created: {vcf_file}")
 
     filtered_vcf_file = filter_variants(input_vcf=vcf_file)
@@ -350,53 +349,75 @@ async def analyze_gene_sequence(file: UploadFile):
     variants = parse_variants(filtered_vcf_file)
     print(f"Variants parsed: {[variant.model_dump() for variant in variants]}")
 
-    return {"variants": variant.model_dump() for variant in variants}
+    return {"variants": [variant.model_dump() for variant in variants]}
 
 def align_sequence(query_file, reference_file="data/hg38.fa"):
     """Align sequence from FASTQ query file to reference and create a BAM file using BWA."""
+
+    return "data/output.sorted.bam"
     
-    bam_file = f"data/{os.path.splitext(os.path.basename(query_file))[0]}.bam"
-    try:
-        # Index the reference file if not already indexed
-        if not os.path.exists(reference_file + ".fai"):
-            subprocess.run(["bwa", "index", reference_file], check=True)
+    # TODO: Reactivate this code for inference
+    # bam_file = f"data/{os.path.splitext(os.path.basename(query_file))[0]}.bam"
+    # try:
+    #     # Index the reference file if not already indexed
+    #     # if not os.path.exists(reference_file + ".bwt"):
+    #     #     print(f"Indexing reference file: {reference_file}")
+    #     #     subprocess.run(["bwa", "index", reference_file], check=True)
 
-        # Perform alignment using BWA
-        sam_file = bam_file.replace('.bam', '.sam')
-        with open(sam_file, 'w') as sam_output:
-            subprocess.run([
-                "bwa", "mem",
-                "-A", "1",  # Match score
-                "-B", "2",  # Mismatch penalty
-                "-O", "3",  # Gap open penalty
-                "-E", "1",  # Gap extension penalty
-                "-L", "0",  # Clipping penalty
-                "-T", "10", # Minimum score to output
-                "-a",       # Output all alignments for SE or unpaired PE
-                reference_file, query_file
-            ], stdout=sam_output, check=True)
-        # Convert SAM to BAM
-        pysam.view("-b", "-o", bam_file, sam_file, catch_stdout=False)
-        
-        # Sort the BAM file
-        sorted_bam = bam_file.replace('.bam', '.sorted.bam')
-        pysam.sort("-o", sorted_bam, bam_file)
-        
-        # Replace the original BAM file with the sorted one
-        subprocess.run(["mv", sorted_bam, bam_file], check=True)
-        
-        # Index the sorted BAM file
-        pysam.index(bam_file)
-        
-        # Clean up the intermediate SAM file
-        subprocess.run(["rm", sam_file], check=True)
+    #     # if not os.path.exists(reference_file + ".fa.fai"):
+    #     #     print(f"Indexing reference file: {reference_file}")
+    #     #     subprocess.run(["bwa", "index", reference_file], check=True)  
 
-        print(f"Alignment completed. BAM file created: {bam_file}")
-        return bam_file
+    #     # Perform alignment using BWA
+    #     sam_file = bam_file.replace('.bam', '.sam')
+    #     print(f"Aligning sequences to reference: {query_file} -> {reference_file}")
+    #     with open(sam_file, 'w') as sam_output:
+    #         result = subprocess.run([
+    #             "bwa", "mem",
+    #             "-A", "1",  # Match score
+    #             "-B", "2",  # Mismatch penalty
+    #             "-O", "3",  # Gap open penalty
+    #             "-E", "1",  # Gap extension penalty
+    #             "-L", "0",  # Clipping penalty
+    #             "-T", "10", # Minimum score to output
+    #             "-a",       # Output all alignments for SE or unpaired PE
+    #             reference_file, query_file
+    #         ], stdout=sam_output, stderr=subprocess.PIPE, text=True, check=True)
+        
+    #     print(f"BWA mem stdout: {result.stdout}")
+    #     print(f"BWA mem stderr: {result.stderr}")
 
-    except Exception as e:
-        print(f"Error during alignment: {e}")
-        raise
+    #     # Convert SAM to BAM
+    #     print(f"Converting SAM to BAM: {sam_file} -> {bam_file}")
+    #     pysam.view("-b", "-o", bam_file, sam_file, catch_stdout=False)
+        
+    #     # Sort the BAM file
+    #     sorted_bam = bam_file.replace('.bam', '.sorted.bam')
+    #     print(f"Sorting BAM file: {bam_file} -> {sorted_bam}")
+    #     pysam.sort("-o", sorted_bam, bam_file)
+        
+    #     # Replace the original BAM file with the sorted one
+    #     subprocess.run(["mv", sorted_bam, bam_file], check=True)
+        
+    #     # Index the sorted BAM file
+    #     print(f"Indexing BAM file: {bam_file}")
+    #     pysam.index(bam_file)
+        
+    #     # Clean up the intermediate SAM file
+    #     subprocess.run(["rm", sam_file], check=True)
+
+    #     print(f"Alignment completed. BAM file created: {bam_file}")
+        # return bam_file
+
+    # except subprocess.CalledProcessError as e:
+    #     print(f"Command failed: {' '.join(e.cmd)}", file=sys.stderr)
+    #     print(f"Exit status: {e.returncode}", file=sys.stderr)
+    #     print(f"STDOUT: {e.stdout}", file=sys.stderr)
+    #     print(f"STDERR: {e.stderr}", file=sys.stderr)
+    #     raise
+    # except Exception as e:
+    #     print(f"An unexpected error occurred: {str(e)}", file=sys.stderr)
+    #     raise
 
 def call_variants(input_bam, reference_file, output_vcf=None) -> str:
     """Perform variant calling using FreeBayes on a BAM file with a reference genome."""
