@@ -1,11 +1,13 @@
-import pysam
+import os
 import random
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio import SeqIO
 import subprocess
 import sys
-import os
+
+import pysam
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
 
 def fetch_genomic_reference_sequence(chromosome, start=None, stop=None) -> Seq:
     with pysam.FastaFile("data/hg38.fa") as reference_genome:
@@ -153,7 +155,7 @@ def filter_variants(input_vcf, output_filtered_vcf=None):
 
         command = [
             "bcftools", "filter",
-            "-i", "QUAL>20", # && DP>0
+            "-i", "QUAL>20",
             "-o", output_filtered_vcf,
             "-O", "v",
             input_vcf
@@ -268,7 +270,7 @@ def analyze_sam_file(sam_file):
             fields = line.split('\t')
             if int(fields[1]) & 0x4 == 0:  # Check if the read is mapped
                 mapped_reads += 1
-    print(f"SAM file analysis:")
+    print("SAM file analysis:")
     print(f"Total reads: {total_reads}")
     print(f"Mapped reads: {mapped_reads}")
 
@@ -303,11 +305,11 @@ def generate_vcf_stats(input_vcf):
 
 if __name__ == "__main__":
 
-    # reference_file = "data/reference_brca1.fa"
-    # patient_file = "data/patient_brca1.fa"
-    # bam_file = "data/aligned_brca1.bam"
-    # output_vcf = "data/variants.vcf"
-    # filtered_vcf = "data/filtered_variants.vcf"
+    reference_file = "data/reference_brca1.fa"
+    patient_file = "data/patient_brca1.fa"
+    bam_file = "data/aligned_brca1.bam"
+    output_vcf = "data/variants.vcf"
+    filtered_vcf = "data/filtered_variants.vcf"
 
     # reference_sequence_brca1 = fetch_genomic_reference_sequence(chromosome="chr17", start=200000, stop=600000) #start=43044295, stop=43170245
     # create_fasta(reference_sequence_brca1, reference_file, "reference")
@@ -324,7 +326,7 @@ if __name__ == "__main__":
 
     # # print("--------------------------")
     # # print(noisy_mutated_sequence_brca1)
-    # align_sequence(reference_file=reference_file, query_file=patient_file, bam_file=bam_file)
+    align_sequence(reference_file=reference_file, query_file=patient_file, bam_file=bam_file)
 
     # # Add this to your main function
     # check_bam_file(bam_file)
@@ -334,7 +336,7 @@ if __name__ == "__main__":
     # call_variants(reference_file, bam_file, output_vcf)
     # # filter_variants(output_vcf, filtered_vcf)
     # # analyze_variants(filtered_vcf)
-    # call_variants(input_bam="data/Run6_IonXpress_003.bam", reference_file="data/hg38.fa")
+    call_variants(input_bam="data/Run6_IonXpress_003.bam", reference_file="data/hg38.fa")
     check_vcf_file("data/variants_Run6_IonXpress_003.vcf")
     filter_variants("data/variants_Run6_IonXpress_003.vcf")
 
