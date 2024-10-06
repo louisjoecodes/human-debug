@@ -66,7 +66,7 @@ class Variant(BaseModel):
     alternate: str = Field(..., description="Alternate allele")
     gene: str = Field(..., description="Gene affected by the variant")
     consequence: str = Field(..., description="Predicted consequence of the variant")
-    significance: str = Field(..., description="Clinical significance of the variant")
+    significance: Literal["Pathogenic", "Likely pathogenic", "Uncertain significance", "Likely benign", "Benign"] = Field(..., description="Clinical significance of the variant")
 
 
 # Allow all CORS origins (for demo purposes only)
@@ -180,7 +180,6 @@ async def extract_letter_content(file: UploadFile):
         transcribed_contents.append(chat_response.choices[0].message.content)
     
     full_transcription = "\n\n".join(transcribed_contents)
-    print
     return {"content": full_transcription}
 
 def extract_patient_info(content):
