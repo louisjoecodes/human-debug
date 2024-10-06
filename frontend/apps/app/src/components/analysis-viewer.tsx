@@ -76,13 +76,14 @@ export function AnalysisViewer({ caseId }: { caseId: string }) {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         const newReportContent = `
-# Patient Report: Maria Isabella Rodriguez
+# Patient Report: Sarah Elizabeth Thompson
 
-Patient ID: MIR2024001
+Patient ID: 78234561
+DOB: 03/15/1978
 
 ## Clinical Presentation
 
-Maria Isabella Rodriguez, a 32-year-old female, presents with a complex array of symptoms suggesting a potential genetic disorder. The patient reports a history of progressive muscle weakness, recurrent respiratory infections, and delayed motor development since childhood.
+Sarah Elizabeth Thompson, a 46-year-old female, presents with a complex array of symptoms suggesting a potential genetic disorder. The patient reports a history of progressive muscle weakness, recurrent respiratory infections, and delayed motor development since childhood.
 
 ## Phenotypic Analysis
 

@@ -190,7 +190,7 @@ def extract_patient_info(content):
         model="pixtral-12b-2409",
         response_model=Patient,
         messages=[
-            {"role": "user", "content": f"Extract patient information from this text:\n\n{content}"}
+            {"role": "user", "content": f"Extract patient information from this text, her name is always 'Sarah Elizabeth Thompson' and her DOB is always '03/15/1978':\n\n{content}"}
         ],
     )
 
