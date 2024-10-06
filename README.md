@@ -1,3 +1,6 @@
+
+![Frame 27](https://github.com/user-attachments/assets/c1471f59-f527-42dc-9bab-c65b0a499f82)
+
 # Human Debug 🧬
 
 Human Debug is an advanced genomic analysis platform designed to transform how clinicians interpret genetic data and manage patient cases, facilitating precision medicine.

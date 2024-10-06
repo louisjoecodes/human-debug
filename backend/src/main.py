@@ -14,8 +14,11 @@ from dotenv import load_dotenv
 import uvicorn
 from typing import Dict, List, Any
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+
+import subprocess
+import vcfpy
 
 load_dotenv()
 pp = pprint.PrettyPrinter(indent=4)
@@ -66,7 +69,19 @@ class Variant(BaseModel):
     alternate: str = Field(..., description="Alternate allele")
     gene: str = Field(..., description="Gene affected by the variant")
     consequence: str = Field(..., description="Predicted consequence of the variant")
-    significance: Literal["Pathogenic", "Likely pathogenic", "Uncertain significance", "Likely benign", "Benign"] = Field(..., description="Clinical significance of the variant")
+    significance: Literal[
+        "pathogenic",
+        "likely_pathogenic",
+        "uncertain_significance",
+        "likely_benign",
+        "benign",
+        "not_provided",
+        "drug_response",
+        "conflicting",
+        "risk_factor",
+        "association",
+        "protective"
+    ] = Field(..., description="Clinical significance of the variant")
 
 
 # Allow all CORS origins (for demo purposes only)
@@ -81,7 +96,6 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"status": "ok"}
-
 
 @app.get("/process_letter")
 async def get_process_letter():
@@ -183,18 +197,14 @@ async def extract_letter_content(file: UploadFile):
     return {"content": full_transcription}
 
 def extract_patient_info(content):
-
     client = instructor.from_mistral(Mistral(api_key=os.getenv("MISTRAL_API_KEY")))
-
-    patient = client.chat.completions.create(
+    return client.chat.completions.create(
         model="pixtral-12b-2409",
         response_model=Patient,
         messages=[
             {"role": "user", "content": f"Extract patient information from this text, her name is always 'Sarah Elizabeth Thompson' and her DOB is always '03/15/1978':\n\n{content}"}
         ],
     )
-
-    return patient
 
 
 def encode_image(image_path):
@@ -279,7 +289,7 @@ async def get_variants() -> List[Variant]:
             alternate="G",
             gene="OR4F5",
             consequence="missense_variant",
-            significance="Uncertain significance"
+            significance="uncertain_significance"
         ),
         Variant(
             chromosome="7",
@@ -288,7 +298,7 @@ async def get_variants() -> List[Variant]:
             alternate="A",
             gene="CFTR",
             consequence="frameshift_variant",
-            significance="Pathogenic"
+            significance="pathogenic"
         ),
         Variant(
             chromosome="17",
@@ -297,7 +307,7 @@ async def get_variants() -> List[Variant]:
             alternate="A",
             gene="BRCA1",
             consequence="stop_gained",
-            significance="Likely pathogenic"
+            significance="likely_pathogenic"
         ),
         Variant(
             chromosome="X",
@@ -306,7 +316,7 @@ async def get_variants() -> List[Variant]:
             alternate="T",
             gene="DMD",
             consequence="splice_donor_variant",
-            significance="Pathogenic"
+            significance="pathogenic"
         ),
         Variant(
             chromosome="4",
@@ -315,54 +325,189 @@ async def get_variants() -> List[Variant]:
             alternate="A",
             gene="FGFR3",
             consequence="missense_variant",
-            significance="Benign"
+            significance="benign"
         )
     ]
     return mock_variants
 
-
 @app.post("/analyze_gene_sequence")
-async def analyze_gene_sequence(file: UploadFile):
+async def analyze_gene_sequence(upload_file: UploadFile):
+    """Analyze the predefined .fastq gene sequence file and return identified variants."""
+
+    # query_file = "data/Run2_IonXpress_008.fastq"
+    reference_file = "data/hg38.fa"
+    
+    bam_file = align_sequence(query_file=upload_file, reference_file=reference_file)
+    print(f"BAM file created: {bam_file}")
+
+    vcf_file = call_variants(input_bam=bam_file, reference_file=reference_file)
+    print(f"VCF file created: {vcf_file}")
+
+    filtered_vcf_file = filter_variants(input_vcf=vcf_file)
+    print(f"Filtered VCF file created: {filtered_vcf_file}")
+
+    variants = parse_variants(filtered_vcf_file)
+    print(f"Variants parsed: {[variant.model_dump() for variant in variants]}")
+
+    return {"variants": [variant.model_dump() for variant in variants]}
+
+def align_sequence(query_file, reference_file="data/hg38.fa"):
+    """Align sequence from FASTQ query file to reference and create a BAM file using BWA."""
+
+    return "data/output.sorted.bam"
+    
+    # TODO: Reactivate this code for inference
+    # bam_file = f"data/{os.path.splitext(os.path.basename(query_file))[0]}.bam"
+    # try:
+    #     # Index the reference file if not already indexed
+    #     # if not os.path.exists(reference_file + ".bwt"):
+    #     #     print(f"Indexing reference file: {reference_file}")
+    #     #     subprocess.run(["bwa", "index", reference_file], check=True)
+
+    #     # if not os.path.exists(reference_file + ".fa.fai"):
+    #     #     print(f"Indexing reference file: {reference_file}")
+    #     #     subprocess.run(["bwa", "index", reference_file], check=True)  
+
+    #     # Perform alignment using BWA
+    #     sam_file = bam_file.replace('.bam', '.sam')
+    #     print(f"Aligning sequences to reference: {query_file} -> {reference_file}")
+    #     with open(sam_file, 'w') as sam_output:
+    #         result = subprocess.run([
+    #             "bwa", "mem",
+    #             "-A", "1",  # Match score
+    #             "-B", "2",  # Mismatch penalty
+    #             "-O", "3",  # Gap open penalty
+    #             "-E", "1",  # Gap extension penalty
+    #             "-L", "0",  # Clipping penalty
+    #             "-T", "10", # Minimum score to output
+    #             "-a",       # Output all alignments for SE or unpaired PE
+    #             reference_file, query_file
+    #         ], stdout=sam_output, stderr=subprocess.PIPE, text=True, check=True)
+        
+    #     print(f"BWA mem stdout: {result.stdout}")
+    #     print(f"BWA mem stderr: {result.stderr}")
+
+    #     # Convert SAM to BAM
+    #     print(f"Converting SAM to BAM: {sam_file} -> {bam_file}")
+    #     pysam.view("-b", "-o", bam_file, sam_file, catch_stdout=False)
+        
+    #     # Sort the BAM file
+    #     sorted_bam = bam_file.replace('.bam', '.sorted.bam')
+    #     print(f"Sorting BAM file: {bam_file} -> {sorted_bam}")
+    #     pysam.sort("-o", sorted_bam, bam_file)
+        
+    #     # Replace the original BAM file with the sorted one
+    #     subprocess.run(["mv", sorted_bam, bam_file], check=True)
+        
+    #     # Index the sorted BAM file
+    #     print(f"Indexing BAM file: {bam_file}")
+    #     pysam.index(bam_file)
+        
+    #     # Clean up the intermediate SAM file
+    #     subprocess.run(["rm", sam_file], check=True)
+
+    #     print(f"Alignment completed. BAM file created: {bam_file}")
+        # return bam_file
+
+    # except subprocess.CalledProcessError as e:
+    #     print(f"Command failed: {' '.join(e.cmd)}", file=sys.stderr)
+    #     print(f"Exit status: {e.returncode}", file=sys.stderr)
+    #     print(f"STDOUT: {e.stdout}", file=sys.stderr)
+    #     print(f"STDERR: {e.stderr}", file=sys.stderr)
+    #     raise
+    # except Exception as e:
+    #     print(f"An unexpected error occurred: {str(e)}", file=sys.stderr)
+    #     raise
+
+def call_variants(input_bam, reference_file, output_vcf=None) -> str:
+    """Perform variant calling using FreeBayes on a BAM file with a reference genome."""
+    try:
+        # Generate output_vcf based on the input BAM file name if not provided
+        if output_vcf is None:
+            bam_basename = os.path.splitext(os.path.basename(input_bam))[0]
+            output_vcf = f"data/variants_{bam_basename}.vcf"
+
+        # Run FreeBayes with less stringent parameters
+        command = [
+            "freebayes",
+            "-f", reference_file,
+            "-C", "1",
+            "--min-alternate-fraction", "0.005",
+            "--min-base-quality", "5",
+            "--min-mapping-quality", "5",
+            "--min-coverage", "1",
+            "--min-alternate-count", "1",
+            "--haplotype-length", "0",
+            "--pooled-continuous",
+            "--use-best-n-alleles", "5",
+            "-b", input_bam,
+            "-v", output_vcf
+        ]
+        subprocess.run(command, check=True)
+        print(f"Variant calling completed. VCF file created: {output_vcf}")
+        return output_vcf
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error during variant calling: {e}")
+        raise
+
+def filter_variants(input_vcf: str) -> str:
+    """Filter variants based on quality."""
+    try:
+        base_name = os.path.splitext(input_vcf)[0]
+        output_filtered_vcf = f"{base_name}_filtered.vcf"
+
+        command = [
+            "bcftools", "filter",
+            "-i", "QUAL>20",
+            "-o", output_filtered_vcf,
+            "-O", "v",
+            input_vcf
+        ]
+        
+        subprocess.run(command, check=True)
+        print(f"Variant filtering completed. Filtered VCF file created: {output_filtered_vcf}")
+        
+        return output_filtered_vcf
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error during variant filtering: {e}")
+        raise
+
+def parse_variants(vcf_file: str) -> List[Variant]:
     """
-    Analyze an uploaded .fastq gene sequence file and return identified variants.
+    Parse a VCF file and return a list of Variant objects.
     """
-    if not file.filename.endswith('.fastq'):
-        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .fastq file.")
+    variants = []
+    reader = vcfpy.Reader.from_path(vcf_file)
+    
+    for record in reader:
+        # Extract basic information
+        chromosome = record.CHROM
+        position = record.POS
+        reference = record.REF
+        alternate = ','.join(str(alt.value) for alt in record.ALT)
+        
+        # Extract variant information
+        gene = record.INFO.get('GENE', "Unknown")
+        consequence = record.INFO.get('CONSEQUENCE', "Unknown")
+        
+        # Determine clinical significance
+        significance = "uncertain_significance"
+        if 'CLNSIG' in record.INFO:
+            significance = record.INFO['CLNSIG'].lower()
 
-    # TODO: Implement actual gene sequence analysis logic here
-    # For now, we'll return mocked data
-
-    mock_variants = [
-        Variant(
-            chromosome="1",
-            position=69897,
-            reference="A",
-            alternate="G",
-            gene="OR4F5",
-            consequence="missense_variant",
-            significance="Uncertain significance"
-        ),
-        Variant(
-            chromosome="7",
-            position=117199644,
-            reference="ATCT",
-            alternate="A",
-            gene="CFTR",
-            consequence="frameshift_variant",
-            significance="Pathogenic"
-        ),
-        Variant(
-            chromosome="17",
-            position=41197708,
-            reference="G",
-            alternate="A",
-            gene="BRCA1",
-            consequence="stop_gained",
-            significance="Likely pathogenic"
-        )
-    ]
-
-    return {"variants": [variant.model_dump() for variant in mock_variants]}
+        variants.append(Variant(
+            chromosome=chromosome,
+            position=position,
+            reference=reference,
+            alternate=alternate,
+            gene=gene,
+            consequence=consequence,
+            significance=significance
+        ))
+    
+    return variants
 
 def start():
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
