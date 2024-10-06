@@ -12,6 +12,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@editorjs/editorjs": "^2.30.6",
+    "@editorjs/header": "^2.8.7",
+    "@editorjs/list": "^1.10.0",
+    "@editorjs/paragraph": "^2.11.6",
     "@jbrowse/react-linear-genome-view": "^2.15.4",
     "@v1/analytics": "workspace:*",
     "@v1/kv": "workspace:*",

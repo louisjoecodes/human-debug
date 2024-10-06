@@ -69,6 +69,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                                     <TableRow>
                                         <TableHead>Created</TableHead>
                                         <TableHead>ID</TableHead>
+                                        <TableHead>Name</TableHead>
                                         <TableHead>Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -80,6 +81,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                                                     {new Date(report.created_at).toLocaleDateString()}
                                                 </TableCell>
                                                 <TableCell>{report.name}</TableCell>
+                                                <TableCell>Medical Report</TableCell>
                                                 <TableCell>
                                                     <ReportViewer caseId={id} data={report} />
                                                 </TableCell>

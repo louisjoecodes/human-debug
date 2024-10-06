@@ -33,7 +33,7 @@ export function CreateCasesChat() {
         <input
           className="w-full p-2 mb-8 border border-gray-300 rounded shadow-xl"
           value={input}
-          placeholder="Say something..."
+          placeholder="Ask something..."
           onChange={handleInputChange}
         />
       </form>

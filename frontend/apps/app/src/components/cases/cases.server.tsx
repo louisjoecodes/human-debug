@@ -53,6 +53,7 @@ export async function CasesServer() {
                 <TableHead>Last Name</TableHead>
                 <TableHead>Birthdate</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -68,6 +69,9 @@ export async function CasesServer() {
                     <TableCell>{caseItem.first_name}</TableCell>
                     <TableCell>{caseItem.last_name}</TableCell>
                     <TableCell>{caseItem.date_of_birth}</TableCell>
+                    <TableCell>
+                      <Badge className="bg-green-800 hover:bg-green-300">Open</Badge>
+                    </TableCell>
                     <TableCell>
                       {formatDistanceToNow(new Date(caseItem.created_at), {
                         addSuffix: true,

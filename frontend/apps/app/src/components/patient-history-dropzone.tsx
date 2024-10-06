@@ -156,21 +156,13 @@ export const PatientHistoryDropzone = ({ caseId }: { caseId: string }) => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Confirm OCR Content and Phenotypes</DialogTitle>
+            <DialogTitle>Confirm patient Phenotype changes</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">OCR Content:</h3>
-              <ScrollArea className="h-[60vh]">
-                <pre className="whitespace-pre-wrap">
-                  {JSON.stringify(patientInfo)}
-                </pre>
-              </ScrollArea>
-            </div>
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <Card>
                 <CardHeader>
-                  <CardTitle>Phenotypes Classifications 🧬</CardTitle>
+                  <CardTitle>Detected Phenotype Classifications 🧬</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[60vh]">

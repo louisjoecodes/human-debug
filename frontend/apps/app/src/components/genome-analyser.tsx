@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@v1/ui/tooltip";
 import { env } from "@/env.mjs";
+import { Button } from "@v1/ui/button";
 
 interface Variant {
   chromosome: string;
@@ -39,7 +40,12 @@ const consequenceIcons: { [key: string]: string } = {
   splice_donor_variant: "✂️",
 };
 
-const VariantCard: React.FC<{ variant: Variant }> = ({ variant }) => {
+const VariantCard: React.FC<{ variant: Variant; onView: (search: string) => void }> = ({ variant, onView }) => {
+  const handleView = () => {
+    const search = `${variant.chromosome}:${variant.position}`;
+    onView(search);
+  };
+
   return (
     <div className="p-3 border rounded-lg shadow-sm">
       <h4 className="text-sm font-semibold mb-1">{variant.gene}</h4>
@@ -47,7 +53,7 @@ const VariantCard: React.FC<{ variant: Variant }> = ({ variant }) => {
         {variant.chromosome}:{variant.position} {variant.reference} →{" "}
         {variant.alternate}
       </p>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1 mt-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
@@ -66,6 +72,9 @@ const VariantCard: React.FC<{ variant: Variant }> = ({ variant }) => {
         >
           {variant.significance}
         </Badge>
+        <Button variant="outline" size="sm" onClick={handleView}>
+          VIEW
+        </Button>
       </div>
     </div>
   );
@@ -137,10 +146,41 @@ export const GenomeAnalyser: React.FC = () => {
     },
   ];
 
+  const defaultSession = {
+    name: "My session",
+    view: {
+      id: "linearGenomeView",
+      type: "LinearGenomeView",
+      tracks: [
+        {
+          type: "ReferenceSequenceTrack",
+          configuration: "GRCh38-ReferenceSequenceTrack",
+          displays: [
+            {
+              type: "LinearReferenceSequenceDisplay",
+              configuration: "GRCh38-ReferenceSequenceTrack-LinearReferenceSequenceDisplay",
+            },
+          ],
+        },
+        {
+          type: "VariantTrack",
+          configuration: "1000genomes_variants",
+          displays: [
+            {
+              type: "LinearVariantDisplay",
+              configuration: "1000genomes_variants-LinearVariantDisplay",
+            },
+          ],
+        },
+      ],
+    },
+  };
+
   const state = createViewState({
     assembly,
     tracks,
     location: "17:43,044,295..43,125,482", // BRCA1 location
+    defaultSession,
   });
 
   // Highlight BRCA1 and BRCA2 regions
@@ -180,6 +220,16 @@ export const GenomeAnalyser: React.FC = () => {
     "Benign",
   ];
 
+  const [viewState, setViewState] = useState(state);
+
+  const handleViewVariant = (search: string) => {
+    setViewState((prevState) => {
+      const newState = { ...prevState };
+      newState.session.view.navToLocString(search);
+      return newState;
+    });
+  };
+
   return (
     <div className="p-4">
       <Card className="mb-6">
@@ -187,7 +237,7 @@ export const GenomeAnalyser: React.FC = () => {
           <CardTitle>Genome Browser</CardTitle>
         </CardHeader>
         <CardContent>
-          <JBrowseLinearGenomeView viewState={state} />
+          <JBrowseLinearGenomeView viewState={viewState} />
         </CardContent>
       </Card>
       <Card>
@@ -204,7 +254,7 @@ export const GenomeAnalyser: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-3">{category}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {groupedVariants[category].map((variant, index) => (
-                        <VariantCard key={index} variant={variant} />
+                        <VariantCard key={index} variant={variant} onView={handleViewVariant} />
                       ))}
                     </div>
                   </div>

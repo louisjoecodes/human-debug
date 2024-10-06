@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@v1/supabase/client";
 import { AnalysisChat } from "./analysis-chat";
 import {
@@ -10,13 +10,17 @@ import {
     CardHeader,
     CardTitle,
 } from "@v1/ui/card";
-import { Heatmap } from "@/components/heatmap";
 import { env } from "@/env.mjs";
+import dynamic from 'next/dynamic';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@v1/ui/tabs";
+
+const EditorJS = dynamic(() => import('./EditorJS'), { ssr: false });
 
 export function AnalysisViewer({ caseId }: { caseId: string }) {
     const [patientData, setPatientData] = useState<any>(null);
     const [phenotypes, setPhenotypes] = useState<any[]>([]);
     const [variants, setVariants] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'search' | 'analysis'>('search');
 
     useEffect(() => {
         const fetchVariants = async () => {
@@ -63,35 +67,97 @@ export function AnalysisViewer({ caseId }: { caseId: string }) {
         fetchPatientData();
     }, [caseId]);
 
+    const defaultEditorContent = {
+        time: new Date().getTime(),
+        blocks: [
+            {
+                type: "header",
+                data: {
+                    text: "Patient Case Report",
+                    level: 1
+                }
+            },
+            {
+                type: "paragraph",
+                data: {
+                    text: "Patient presents with the following phenotypes:"
+                }
+            },
+            {
+                type: "list",
+                data: {
+                    style: "unordered",
+                    items: [
+                        "Phenotype 1",
+                        "Phenotype 2",
+                        "Phenotype 3"
+                    ]
+                }
+            },
+            {
+                type: "header",
+                data: {
+                    text: "Genome Sequence Analysis",
+                    level: 2
+                }
+            },
+            {
+                type: "paragraph",
+                data: {
+                    text: "The genome sequence analysis revealed the following variants:"
+                }
+            },
+            {
+                type: "list",
+                data: {
+                    style: "ordered",
+                    items: [
+                        "Variant 1: Description",
+                        "Variant 2: Description",
+                        "Variant 3: Description"
+                    ]
+                }
+            }
+        ]
+    };
+
     return (
-        <div>
-            <h1>Analysis Viewer</h1>
-            <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
-                <Heatmap phenotypes={phenotypes} variants={variants} />
-                <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                    <div>
-                        {patientData && <div>{patientData.name}</div>}
-                        {phenotypes && <div>{JSON.stringify(phenotypes)}</div>}
-                        {variants && <div>{JSON.stringify(variants)}</div>}
-                    </div>
-                </div>
-                <div>
-                    <Card className="overflow-hidden">
-                        <CardHeader className="flex flex-row items-start bg-muted/50">
-                            <div className="grid gap-0.5">
-                                <CardTitle className="group flex items-center gap-2 text-lg">
-                                    Analysis Chat
-                                </CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <AnalysisChat patientData={patientData} phenotypes={phenotypes} />
-                        </CardContent>
-                        <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
-                            <div className="text-xs text-muted-foreground">Experimental</div>
-                        </CardFooter>
-                    </Card>
-                </div>
+        <div className="flex flex-col h-[calc(100vh-204px)]"> {/* Adjust 64px if your header height is different */}
+            <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-3 h-full overflow-hidden">
+                <Card className="lg:col-span-2 xl:col-span-2 flex flex-col h-full">
+                    <CardHeader className="bg-muted/50">
+                        <CardTitle className="text-lg">Patient Case Report</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 flex-1 overflow-y-auto">
+                        <EditorJS defaultValue={defaultEditorContent} />
+                    </CardContent>
+                </Card>
+
+                <Card className="flex flex-col h-full">
+                    <CardHeader className="bg-muted/50">
+                        <CardTitle className="text-lg">Analysis Helpers</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 flex-1 overflow-hidden">
+                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'search' | 'analysis')} className="flex flex-col h-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="search">Human Debug Search</TabsTrigger>
+                                <TabsTrigger value="analysis">Medical Information Assistant</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="search" className="flex-1 overflow-hidden">
+                                <div className="h-full">
+                                    <iframe
+                                        src="https://human-debug-search.vercel.app"
+                                        title="Research Assistant"
+                                        className="w-full h-full border-0"
+                                    />
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="analysis" className="flex-1 overflow-hidden">
+                                <AnalysisChat patientData={patientData} phenotypes={phenotypes} />
+                            </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

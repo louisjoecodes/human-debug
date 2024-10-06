@@ -22,35 +22,37 @@ export function AnalysisChat({
       },
     ],
   });
+
   return (
-    <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch relative">
-      <div className="space-y-4 flex-grow">
-        {messages.map(
-          (m) =>
-            // Only render messages that don't start with "content:"
-            !m.content.startsWith("content:") && (
-              <div key={m.id} className="whitespace-pre-wrap">
-                <div>
-                  <div className="font-bold">{m.role}</div>
-                  <p>
-                    {m.content.length > 0 ? (
-                      m.content
-                    ) : (
-                      <span className="italic font-light">
-                        {`calling tool: ${m?.toolInvocations?.[0]?.toolName}`}
-                      </span>
-                    )}
-                  </p>
+    <div className="flex flex-col h-full">
+      <div className="flex-grow overflow-y-auto" style={{ height: "calc(100% - 70px)" }}>
+        <div className="space-y-4 p-4">
+          {messages.map(
+            (m) =>
+              !m.content.startsWith("content:") && (
+                <div key={m.id} className="whitespace-pre-wrap">
+                  <div>
+                    <div className="font-bold">{m.role}</div>
+                    <p>
+                      {m.content.length > 0 ? (
+                        m.content
+                      ) : (
+                        <span className="italic font-light">
+                          {`calling tool: ${m?.toolInvocations?.[0]?.toolName}`}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ),
-        )}
+              )
+          )}
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="absolute bottom-0 w-full">
+      <form onSubmit={handleSubmit} className="p-4 border-t">
         <input
-          className="w-full p-2 mb-8 border border-gray-300 rounded shadow-xl"
+          className="w-full p-2 border border-gray-300 rounded shadow-xl"
           value={input}
-          placeholder="Say something..."
+          placeholder="Ask something..."
           onChange={handleInputChange}
         />
       </form>
