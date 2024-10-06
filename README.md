@@ -1,7 +1,5 @@
 
-![Frame 27](https://github.com/user-attachments/assets/8a118387-3c94-4d28-a97e-acc088a6ad75)
-
-
+![Frame 27](https://github.com/user-attachments/assets/c1471f59-f527-42dc-9bab-c65b0a499f82)
 
 # Human Debug 🧬
 
