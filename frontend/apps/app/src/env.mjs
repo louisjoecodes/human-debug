@@ -15,7 +15,6 @@ export const env = createEnv({
     SUPABASE_SERVICE_KEY: z.string(),
     UPSTASH_REDIS_REST_TOKEN: z.string(),
     UPSTASH_REDIS_REST_URL: z.string(),
-    ELEVENLABS_API_KEY: z.string(),
   },
   client: {
     NEXT_PUBLIC_OPENPANEL_CLIENT_ID: z.string(),
